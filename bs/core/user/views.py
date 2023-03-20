@@ -7,3 +7,7 @@ EMAIL_ENABLED = import_from_settings('EMAIL_ENABLED', False)
 if EMAIL_ENABLED:
     EMAIL_TICKET_SYSTEM_ADDRESS = import_from_settings(
         'EMAIL_TICKET_SYSTEM_ADDRESS')
+
+
+def x():
+    return x
