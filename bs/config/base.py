@@ -44,7 +44,9 @@ INSTALLED_APPS += [
 ]
 
 INSTALLED_APPS += [
-
+    'bs.core.portal',
+    'bs.core.user',
+    'bs.core.utils',
 ]
 
 MIDDLEWARE = [

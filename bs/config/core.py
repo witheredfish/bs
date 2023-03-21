@@ -40,4 +40,4 @@ EMAIL_DIRECTOR_PENDING_PROJECT_REVIEW_EMAIL = """
 电话:15061107827
 """
 
-ACCOUNT_CREATION_TEXT = '所有人员能通过提供相关材料来申请账户。详情请查看<a href="#">说明</a>。（只可用于教育，不可商用）'
+ACCOUNT_CREATION_TEXT = '所有人员能通过提供相关材料来申请账户。详情请查看<a href="https://github.com/witheredfish/bs">说明</a>。（只可用于教育，不可商用）'
