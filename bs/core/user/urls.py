@@ -14,4 +14,5 @@ urlpatterns = [
              redirect_authenticated_user=True),
          name='login'
          ),
+    path('logout', LogoutView.as_view(), name='logout')
 ]
