@@ -1,24 +1,25 @@
 from bs.config.env import ENV
 
-EMAIL_ENABLED = ENV.bool('EMAIL_ENABLED', default=False)
+EMAIL_ENABLED = ENV.bool('EMAIL_ENABLED', default=True)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = ENV.str('EMAIL_HOST', default='localhost')
-EMAIL_PORT = ENV.int('EMAIL_PORT', default=25)
-EMAIL_HOST_USER = ENV.str('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = ENV.str('EMAIL_HOST_PASSWORD', default='')
-EMAIL_USE_TLS = ENV.bool('EMAIL_USE_TLS', default=False)
+EMAIL_HOST = ENV.str('EMAIL_HOST', default='smtp.qq.com')
+EMAIL_PORT = ENV.int('EMAIL_PORT', default=465)
+EMAIL_HOST_USER = ENV.str('EMAIL_HOST_USER', default='874166414@qq.com')
+EMAIL_HOST_PASSWORD = ENV.str(
+    'EMAIL_HOST_PASSWORD', default='tbtednugguvsbbge')
+EMAIL_USE_TLS = ENV.bool('EMAIL_USE_TLS', default=True)
 EMAIL_TIMEOUT = ENV.int('EMAIL_TIMEOUT', default=3)
-EMAIL_SUBJECT_PREFIX = ENV.str('EMAIL_SUBJECT_PREFIX', default='[BS_EDU]')
+EMAIL_SUBJECT_PREFIX = ENV.str('EMAIL_SUBJECT_PREFIX', default='[阿鱼的毕设]')
 EMAIL_ADMIN_LIST = ENV.list('EMAIL_ADMIN_LIST', default=[])
 EMAIL_SENDER = ENV.str('EMAIL_SENDER', default='')
 EMAIL_TICKET_SYSTEM_ADDRESS = ENV.str(
-    'EMAIL_TICKET_SYSTEM_ADDRESS', default='')
+    'EMAIL_TICKET_SYSTEM_ADDRESS', default=['874166414@qq.com'])
 EMAIL_DIRECTOR_EMAIL_ADDRESS = ENV.str(
     'EMAIL_DIRECTOR_EMAIL_ADDRESS', default='')
 EMAIL_PROJECT_REVIEW_CONTACT = ENV.str(
     'EMAIL_PROJECT_REVIEW_CONTACT', default='')
 EMAIL_DEVELOPMENT_EMAIL_LIST = ENV.list(
-    'EMAIL_DEVELOPMENT_EMAIL_LIST', default=[])
+    'EMAIL_DEVELOPMENT_EMAIL_LIST', default=['874166414@qq.com'])
 EMAIL_OPT_OUT_INSTRUCTION_URL = ENV.str(
     'EMAIL_OPT_OUT_INSTRUCTION_URL', default='')
 EMAIL_ALLOCATION_EXPIRING_NOTIFICATION_DAYS = ENV.list(

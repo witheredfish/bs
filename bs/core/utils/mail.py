@@ -21,3 +21,45 @@ EMAIL_OPT_OUT_INSTRUCTION_URL = import_from_settings(
 EMAIL_SIGNATURE = import_from_settings('EMAIL_SIGNATURE')
 EMAIL_CENTER_NAME = import_from_settings('CENTER_NAME')
 CENTER_BASE_URL = import_from_settings('CENTER_BASE_URL')
+
+
+def send_email(subject, body, sender, receiver, receiver_list, cc=[]):
+    if not EMAIL_ENABLED:
+        return
+
+    if len(receiver_list) == 0:
+        logger.error("发送失败，没有接收对象。")
+
+    if len(sender) == 0:
+        logger.error("发送失败，缺失发送地址。")
+
+    if len(EMAIL_SUBJECT_PREFIX) > 0:
+        subject = EMAIL_SUBJECT_PREFIX + '  '+subject
+
+    if settings.DEBUG:
+        receiver_list = EMAIL_DEVELOPMENT_EMAIL_LIST
+
+    if cc and settings.DEBUG:
+        cc = EMAIL_DEVELOPMENT_EMAIL_LIST
+
+    try:
+        if cc:
+            email = EmailMessage(subject, body, sender,
+                                 receiver, receiver_list, cc)
+            email.send(fail_silently=False)
+        else:
+            send_mail(subject, body, sender,
+                      receiver_list, fail_silently=False)
+
+    except SMTPException as e:
+        logger.error("主题为%s的邮件，从%s发给%s，发送失败了", subject,
+                     sender, ','.join(receiver_list))
+
+
+def send_email_template(subject, template_name, template_context, sender, receiver_list):
+    if not EMAIL_ENABLED:
+        return
+
+    body = render_to_string(template_name, template_context)
+
+    return send_email(subject, body, sender, receiver_list)

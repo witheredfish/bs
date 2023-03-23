@@ -15,8 +15,8 @@ urlpatterns = [
          name='login'
          ),
     path('logout', LogoutView.as_view(), name='logout'),
-    path('user-profile/', user_views.UserProfile.as_view(), name='user_profile'),
+    path('user-profile/', user_views.UserProfile.as_view(), name='user-profile'),
     path('user-profile/<str:viewed_username>',
-         user_views.UserProfile.as_view(), name='user_profile'),
-    # path('user-upgrade/',)
+         user_views.UserProfile.as_view(), name='user-profile'),
+    path('user-upgrade/', user_views.UserUpgradeAccount.as_view(), name='user-upgrade')
 ]

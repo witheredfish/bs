@@ -15,6 +15,7 @@ from django.views import View
 from django.views.generic import ListView, TemplateView
 
 from bs.core.utils.common import import_from_settings
+from bs.core.utils.mail import send_email_template
 
 logger = logging.getLogger(__name__)
 EMAIL_ENABLED = import_from_settings('EMAIL_ENABLED', False)
@@ -55,6 +56,7 @@ class UserProfile(TemplateView):
 
 
 class UserUpgradeAccount(LoginRequiredMixin, UserPassesTestMixin, View):
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_superuser:
             messages.error(request, '你已为超级用户，不需要升级。')
@@ -68,4 +70,13 @@ class UserUpgradeAccount(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request):
         if EMAIL_ENABLED:
-            send_email_template
+            send_email_template(
+                '账户升级请求',
+                'email/upgrade_account_request.text',
+                {'user': request.user},
+                request.user.email,
+                [EMAIL_TICKET_SYSTEM_ADDRESS]
+            )
+
+        messages.success(request, '请求发送成功')
+        return HttpResponseRedirect(reverse('user-profile'))

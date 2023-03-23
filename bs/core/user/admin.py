@@ -1,5 +1,5 @@
 from django.contrib import admin
-
+from django.contrib.auth.models import User
 from bs.core.user.models import UserProfile
 
 
@@ -11,6 +11,8 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def username(self, obj):
         return obj.user.username
+    username.short_description = '用户名'
 
     def first_name(self, obj):
         return obj.user.first_name
+    first_name.short_description = '姓名'
