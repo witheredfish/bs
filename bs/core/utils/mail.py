@@ -23,7 +23,7 @@ EMAIL_CENTER_NAME = import_from_settings('CENTER_NAME')
 CENTER_BASE_URL = import_from_settings('CENTER_BASE_URL')
 
 
-def send_email(subject, body, sender, receiver, receiver_list, cc=[]):
+def send_email(subject, body, sender,  receiver_list, cc=[]):
     if not EMAIL_ENABLED:
         return
 
@@ -45,13 +45,14 @@ def send_email(subject, body, sender, receiver, receiver_list, cc=[]):
     try:
         if cc:
             email = EmailMessage(subject, body, sender,
-                                 receiver, receiver_list, cc)
+                                 receiver_list, cc)
             email.send(fail_silently=False)
         else:
             send_mail(subject, body, sender,
                       receiver_list, fail_silently=False)
 
     except SMTPException as e:
+        print(e)
         logger.error("主题为%s的邮件，从%s发给%s，发送失败了", subject,
                      sender, ','.join(receiver_list))
 

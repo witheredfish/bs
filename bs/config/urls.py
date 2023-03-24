@@ -13,3 +13,6 @@ urlpatterns = [
     path('user/', include('bs.core.user.urls')),
     path('', portal_views.home, name='home'),
 ]
+
+if 'django_su.backends.SuBackend' in settings.AUTHENTICATION_BACKENDS:
+    urlpatterns.append(path('su/', include('django_su.urls')))

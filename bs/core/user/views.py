@@ -16,6 +16,8 @@ from django.views.generic import ListView, TemplateView
 
 from bs.core.utils.common import import_from_settings
 from bs.core.utils.mail import send_email_template
+from bs.core.user.forms import UserSearchForm
+from bs.core.user.utils import CombinedUserSearch
 
 logger = logging.getLogger(__name__)
 EMAIL_ENABLED = import_from_settings('EMAIL_ENABLED', False)
@@ -55,7 +57,11 @@ class UserProfile(TemplateView):
         return context
 
 
+@method_decorator(login_required, name='dispatch')
 class UserUpgradeAccount(LoginRequiredMixin, UserPassesTestMixin, View):
+
+    def test_func(self):
+        return True
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_superuser:
@@ -80,3 +86,33 @@ class UserUpgradeAccount(LoginRequiredMixin, UserPassesTestMixin, View):
 
         messages.success(request, '请求发送成功')
         return HttpResponseRedirect(reverse('user-profile'))
+
+
+class UserSearchHome(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'user/user_search_home.html'
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['user_search_form'] = UserSearchForm()
+        return context
+
+
+class UserSearchResults(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = 'user/user_search_results.html'
+    raise_exception = True
+
+    def post(self, request):
+        user_search_string = request.POST.get('q')
+
+        search_by = request.POST.get('search_by')
+
+        search_result = CombinedUserSearch(user_search_string, search_by)
+        context = search_result.search()
+
+        return render(request, self.template_name, context)
+
+    def test_func(self):
+        return self.request.user.is_staff

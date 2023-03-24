@@ -1,0 +1,34 @@
+{% if matches %}
+    {% if number_of_usernames_found %}
+        <strong>搜索{{number_of_usernames_searched}}个用户，找到{{number_of_usernames_found}}个用户。</strong>
+    {% endif %}
+    {% if usernames_not_found %}
+        未找到{{usernames_not_found|length}}个用户，分别是：{{usernames_not_found|join:'， '}}
+    {% endif %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">用户名</th>
+                    <th scope="col">姓名</th>
+                    <th scope="col">邮箱</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in matches %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td><a href="{% url 'user-profile' user.username %}">{{ user.username }}</a></td>
+                        <td>{{ user.first_name }}</td>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info text-center">
+        没有搜索结果！！！
+    </div>
+{% endif %}

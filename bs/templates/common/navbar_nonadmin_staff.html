@@ -1,7 +1,7 @@
 <li id="navbar-admin" class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">员工中心</a>
     <div class="dropdown-menu">
-            <a id="navbar-user-search" class="dropdown-item" href="">用户搜索</a>
+            <a id="navbar-user-search" class="dropdown-item" href="user-search-home">用户搜索</a>
             {% if perms.project.can_view_all_projects %}
                 <a class="dropdown-item" href="">所有项目</a>
             {% endif %}
