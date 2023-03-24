@@ -41,7 +41,7 @@ class UserSearch(abc.ABC):
 
 
 class LocalUserSearch(UserSearch):
-    search_source = 'local'
+    search_source = '本地'
 
     def search_a_user(self, user_search_string=None, search_by='all_fields'):
         size_limit = 50
@@ -59,12 +59,13 @@ class LocalUserSearch(UserSearch):
             entries = User.objects.all()[:size_limit]
 
         users = []
-        for idx, user in enumerate(entries, 1):
+        for user in enumerate(entries, 1):
             if user:
                 user_dict = {
                     'first_name': user.first_name,
                     'username': user.username,
                     'email': user.email,
+                    'source': self.search_source,
                 }
                 users.append(user_dict)
 

@@ -13,6 +13,7 @@
                     <th scope="col">用户名</th>
                     <th scope="col">姓名</th>
                     <th scope="col">邮箱</th>
+                    <th scope="col">来源</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,6 +23,7 @@
                         <td><a href="{% url 'user-profile' user.username %}">{{ user.username }}</a></td>
                         <td>{{ user.first_name }}</td>
                         <td>{{ user.email }}</td>
+                        <td>{{ user.source }}</td>
                     </tr>
                 {% endfor %}
             </tbody>
