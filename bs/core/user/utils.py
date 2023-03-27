@@ -59,7 +59,7 @@ class LocalUserSearch(UserSearch):
             entries = User.objects.all()[:size_limit]
 
         users = []
-        for user in enumerate(entries, 1):
+        for idx, user in enumerate(entries, 1):
             if user:
                 user_dict = {
                     'first_name': user.first_name,

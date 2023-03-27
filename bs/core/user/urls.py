@@ -6,6 +6,8 @@ import bs.core.user.views as user_views
 
 EXTRA_APPS = settings.INSTALLED_APPS
 
+# 未做 user-projects   user-allocations
+
 urlpatterns = [
     path('login',
          LoginView.as_view(
