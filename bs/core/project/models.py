@@ -56,3 +56,5 @@ class Project(TimeStampedModel):
 
         if "我们没有关于您的研究信息。请提供工作的详细描述并更新您的学科领域。谢谢！" in self.description:
             raise ValidationError('请输入项目描述')
+
+    def x():
