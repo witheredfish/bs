@@ -1,0 +1,150 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}
+项目内容
+{% endblock %}
+
+{% block content %}
+{% if is_allowed_to_update_project and project.needs_review%}
+    <div class="alert alert-warning">
+        你需要审核这个项目 <a href="{% url 'project-review' project.pk %}">审核项目</a>
+    </div>
+{% endif %}
+
+<div id="alert_div">
+</div>
+
+{% if project.status.name=='Archived' %}
+    <div class="alert alert-warning" role="alert">
+        这是一个存档项目！ 您无法进行任何更改。
+    </div>
+{% endif %}
+
+<div class="mb-3">
+    <h2 class="text-justify">{{ project.title }}</h2>
+    <hr>
+</div>
+
+{% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+    <div class="card mb-3 bg-light">
+        <div class="card-header">
+            <h3 class="d-inline" id="manage-project"><i class="fas fa-cubes" aria-hidden="true"></i>项目管理</h3>
+            <div class="float-right">
+                {% if project.status.name in 'Active, New' %}
+                    <a class="btn btn-info" href="{% url 'project-update' project.pk %}" role="button"><i class="far fa-edit" aria-hidden="true"></i> 更新项目信息</a>
+                    <a class="btn btn-info" href="{% url 'project-archive' project.id %}" role="button"><i class="fas fa-file-archive" aria-hidden="true"></i> 项目存档</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            {% if project.status.name != 'Archived' %}
+                <a class="btn btn-success" href="{% url 'project-add-users-search' project.pk %}" role="button"><i class="fas fa-user-plus" aria-hidden="true"></i> 添加人员</a>
+                <a class="btn btn-success" href="{% url 'grant-create' project.id %}" role="button"><i class="fas fa-trophy" aria-hidden="true"></i> 添加经费</a>
+                <a class="btn btn-success" href="{% url 'publication-search' project.pk %}" role="button"><i class="fas fa-newspaper" aria-hidden="true"></i> 添加出版物</a>
+                <a class="btn btn-success" href="{% url 'add-research-output' project.pk %}" role="button"><i class="far fa-newspaper" aria-hidden="true"></i> 添加研究产出t</a>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h3 class="card-title">
+            项目负责人：
+            {{ project.pi.first_name }}
+            ({{ project.pi.username }})
+            <a href="mailto:{{ project.pi.email }} "><i class="far fa-envelope" aria-hidden="true"></i><span class="sr-only">邮件他</span></a>
+        </h3>
+        <p class="card-text text-justify"><strong>项目描述: </strong>{{ project.description }}</p>
+        <p class="card-text text-justify"><strong>学科领域: </strong>{{ project.field_of_science }}</p>
+        <p class="card-text text-justify"><strong>项目状态: </strong>{{ project.status }}
+            {% if project.last_project_review and  project.last_project_review.status.name == 'Pending'%}
+                <span class="badge badge-pill badge-info">项目等待审核</span>
+            {% endif %}
+        </p>
+        <p class="card-text text-justify"><strong>创建时间: </strong>{{ project.created|date:"M. d, Y" }}</p>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h3 class="d-inline" id="users"><i class="fas fa-users" aria-hidden="true"></i> 人员</h3> <span class="badge badge-secondary">{{project_users.count}}</span>
+        <div class="float-right">
+            {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+                <a class="btn btn-primary" href="{{mailto}}" role="button"><i class="far fa-envelope" aria-hidden="true"></i> 邮件他</a>
+                <a class="btn btn-success" href="{% url 'project-add-users-search' project.id %}" role="button"><i class="fas fa-user-plus" aria-hidden="true"></i> 添加人员</a>
+                <a class="btn btn-danger" href="{% url 'project-remove-users' project.id %}" role="button"><i class="fas fa-user-times" aria-hidden="true"></i> 删除人员</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table id="projectuser_table" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col" class="text-nowrap">用户名</th>
+                        <th scope="col" class="text-nowrap">姓名</th>
+                        <th scope="col" class="text-nowrap">邮箱</th>
+                        <th scope="col" class="text-nowrap">角色 <a href="#" data-toggle="popover" title="Role" data-trigger="hover" data-content="项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。</span></a></th>
+                        <th scope="col" class="text-nowrap">状态</th>
+                        <th scope="col" class="nosort"><input type="checkbox" class="check" id="selectAll" style="margin-right: 5px;">启用通知 <a href="#" title="Enable Notifications" data-toggle="popover" data-trigger="hover" data-content="禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。</span></a></th>
+                        <th scope="col" class="nosort">操作</th>
+                    </tr>
+                </thead>
+                <tbody> 
+                    {% for user in project_users %}
+                        <tr>
+                            <td>{{ user.user.username }}</td>
+                            <td>{{ user.user.first_name }}</td>
+                            <td>{{ user.user.email }}</td>
+                            <td>{{ user.role.name }}</td>
+                            {% if user.status.name == 'Active' %}
+                                <td class="text-success">活跃</td>
+                            {% else %}
+                                <td class="text-info">不活跃</td>
+                            {% endif %}
+                            <td>
+                                {% if is_allowed_to_update_project %}
+                                    <input type="checkbox"
+                                    id="email_notifications_for_user_id_{{user.id}}"
+                                    name="email_notifications_checkbox"
+                                    value="{{ user.enable_notifications }}"
+                                    {% if user.enable_notifications %} checked {% endif %}
+                                    {% if user.role.name == "Manager" %} disabled {% endif %}
+                                    {% if not request.user.is_superuser and user.role.name == "User" and request.user == user.user %} disabled {% endif %}>
+                                {% elif request.user == user.user %}
+                                    <input type="checkbox"
+                                    id="email_notifications_for_user_id_{{user.id}}"
+                                    name="email_notifications_checkbox"
+                                    value="{{ user.enable_notifications }}"
+                                    {% if user.enable_notifications %} checked {% endif %}>
+                                {% else %}
+                                    <input type="checkbox"
+                                    id="email_notifications_for_user_id_{{user.id}}"
+                                    name="email_notifications_checkbox"
+                                    value="{{ user.enable_notifications }}"
+                                    {% if user.enable_notifications %} checked {% endif %}
+                                    disabled>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if is_allowed_to_update_project %}
+                                    <a href="{% url 'project-user-detail' project.pk user.id %}"><i class="fas fa-user-edit" aria-hidden="true"></i><span class="sr-only">编辑</span></a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}      
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <h3 class="d-inline"><i class="fas fa-server" aria-hidden="true"></i> 分配</h3> <span class="badge badge-secondary">10</span>
+    </div>
+</div>
