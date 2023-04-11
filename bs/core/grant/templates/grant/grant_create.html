@@ -1,0 +1,22 @@
+{% extends 'common/base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}
+创建资助
+{% endblock  %}
+
+{% block content %}
+  <form method="post">{% csrf_token %}
+    {{ form|crispy }}
+    <input class="btn btn-primary" type="submit" value="创建" />
+    <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button">取消</a><br>
+</form>
+
+<script>
+ $('#id_grant_start').flatpickr();
+ $('#id_grant_end').flatpickr();
+</script>
+
+
+{% endblock %}

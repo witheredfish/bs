@@ -22,3 +22,9 @@ def su_login_callback(user):
 
     logger.warn('用户{}请求登录其他账号，没有权限，已驳回。', user)
     return False
+
+
+class Echo:
+
+    def write(self, value):
+        return value

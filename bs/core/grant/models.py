@@ -67,7 +67,7 @@ class Grant(TimeStampedModel):
     percent_credit = models.FloatField(
         validators=[MaxValueValidator(100)], verbose_name="占比")
     direct_funding = models.FloatField(verbose_name="直接资助")
-    total_amount_awarded = models.FloatField(verbose_name="奖励总和")
+    total_amount_awarded = models.FloatField(verbose_name="资助总和")
     status = models.ForeignKey(
         GrantStatusChoice, on_delete=models.CASCADE, verbose_name="状态")
     history = HistoricalRecords(verbose_name="历史")
