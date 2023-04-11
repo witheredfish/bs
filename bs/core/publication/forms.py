@@ -17,7 +17,7 @@ class PublicationSearchForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['search_id'].help_text = '<br/>Enter ID such as DOI or Bibliographic Code to search.'
+        self.fields['search_id'].help_text = '<br/>输入ID，例如 DOI 或书目代码进行搜索。'
 
 
 class PublicationResultForm(forms.Form):

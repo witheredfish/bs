@@ -27,7 +27,7 @@ class Publication(TimeStampedModel):
     unique_id = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="独立ID")
     source = models.ForeignKey(
-        PublicationSource, on_delete=models.CASCADE, verbose_name="资源地址")
+        PublicationSource, on_delete=models.CASCADE, verbose_name="来源地址")
     STATUS_CHOICES = (
         ('Active', '活跃'),
         ('Archived', '封存'),

@@ -1,0 +1,74 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+删除出版物
+{% endblock %}
+
+
+
+{% block content %}
+<h2>给{{project.title}}删除出版物</h2>
+<hr>
+
+{% if formset %}
+  <div class="card border-light">
+    <div class="card-body">
+      <form action="{% url 'publication-delete-publications' project.pk %}" method="post">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover">
+            <thead>
+              <tr>
+                <th>
+                  <input type="checkbox" class="check" id="selectAll">
+                </th>
+                <th scope="col">标题</th>
+                <th scope="col">年份</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for form in formset %}
+              <tr>
+                <td>{{ form.selected }}</td>
+                <td>{{ form.title.value }}</td>
+                <td>{{ form.year.value }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {{ formset.management_form }}
+        <div>
+          <button type="submit" class="btn btn-danger"><i class="fas fa-minus" aria-hidden="true"></i> 删除所选出版物</button>
+          <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回</a>
+          <br>
+        </div>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <a class="btn btn-secondary mb-3" href="{% url 'project-detail' project.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回</a>
+  <div class="alert alert-info">
+    没有出版物可删除
+  </div>
+{% endif %}
+
+<script>
+  $(document).ready(function () {
+    $("input[name^='publicationform-']").click(function (ele) {
+      var id = $(this).attr('id');
+      if ( id != "selectAll") {
+        $("#selectAll").prop('checked', false);
+      }
+    });
+
+    $('#selectAll').click(function(e){
+      var table= $(e.target).closest('table');
+      $('td input:checkbox',table).prop('checked',this.checked);
+    });
+  });
+</script>
+{% endblock %}

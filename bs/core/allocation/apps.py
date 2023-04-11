@@ -2,5 +2,6 @@ from django.apps import AppConfig
 
 
 class AllocationConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'allocation'
+    name = 'bs.core.allocation'
+
+    verbose_name = "资源分配"

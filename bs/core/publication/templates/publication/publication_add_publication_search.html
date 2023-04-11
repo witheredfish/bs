@@ -1,0 +1,76 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+添加出版物
+{% endblock %}
+
+
+{% block content %}
+<h2>给{{project.title}}添加出版物</h2>
+<hr>
+
+<div class="col">
+  <a class="btn btn-info" href="{% url 'add-publication-manually' project.pk %}" role="button"><i class="far fa-edit" aria-hidden="true"></i> 输入出版物</a>
+
+  <form id="post-form">
+    {% csrf_token %}
+    {{ publication_search_form|crispy }}
+    <button id="search-button" type="submit" class="btn btn-success btn-block"><i class="fas fa-search" aria-hidden="true"></i> 搜索</button>
+  </form>
+</div>
+
+<br>
+
+<div class="col" id="search_results">
+  <div class="card border-light">
+    <div class="card-body">
+      <div id="search_results_inner"><a class="btn btn-secondary" href="{% url 'project-detail' project_pk %}" role="button">返回</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block javascript %}
+  {{ block.super }}
+<script>
+  $('#post-form').on('submit', function(event){
+    event.preventDefault();
+    $('#search_results').show();
+    $("#search_results_inner").html('<div class="alert alert-info text-center"><i class="fas fa-sync fa-spin fa-fw" aria-hidden="true"></i> 搜索</div>')
+    create_post();
+  });
+
+  function create_post() {
+    search_id = $('#id_search_id').val().trim();
+
+    var pk = "{{ project.pk }}"
+    $.ajax({
+        url : "/publication/publication-search-result/" + pk +"/", 
+        type : "POST", 
+        data : {
+          search_id : search_id, 
+          csrfmiddlewaretoken: "{{ csrf_token }}"
+        }, 
+        success : function(data) {
+            $('#post-text').val(''); 
+            $('#search_results').show();
+            $('#search_results_inner').html(data);
+        },
+        
+        error : function(xhr,errmsg,err) {
+            $('#results').html("<div class='alert-box alert radius' data-alert>错误辣： "+errmsg+
+                " <a href='#' class='close'>&times;</a></div>"); 
+            console.log(xhr.status + ": " + xhr.responseText); 
+        }
+    });
+  };
+
+  $(document).ready(function(){
+    $('[data-toggle="popover"]').popover(); 
+  });
+</script>
+{% endblock %}
