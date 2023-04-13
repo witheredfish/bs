@@ -37,7 +37,7 @@ class ChangesOnlyOnActiveProjectMixin:
             Project, pk=self.kwargs.get('project_pk'))
         if project_obj.status.name not in ['Active', 'New', ]:
             messages.error(
-                request, '不能修改封存项目')
+                request, '不能修改存档项目')
             return HttpResponseRedirect(reverse('project-detail', kwargs={'pk': project_obj.pk}))
         else:
             return super().dispatch(request, *args, **kwargs)

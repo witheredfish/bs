@@ -1,0 +1,12 @@
+你好，系统管理员
+
+对系统资源的分配已过期。应确认已删除分配中的所有用户对这些资源的访问权限。 
+以下是今天过期的分配列表：
+
+    过期的分配:{% for project_key, project_url in project_dict.items %}
+    {% spaceless %} {% for allocation_key, allocation_value in allocation_dict.items %}{% if allocation_key == project_url.0 %}{% for allocation in allocation_value %}{% for allocation_url, resource_name in allocation.items %}
+        {{ resource_name }} : {{ allocation_url }}{% endfor %}{% endfor %}{% endif %}{% endfor %}{% endspaceless %}
+{% endfor %}
+
+谢谢
+{{ signature }}

@@ -30,7 +30,7 @@ class Publication(TimeStampedModel):
         PublicationSource, on_delete=models.CASCADE, verbose_name="来源地址")
     STATUS_CHOICES = (
         ('Active', '活跃'),
-        ('Archived', '封存'),
+        ('Archived', '存档'),
     )
     status = models.CharField(
         max_length=16, choices=STATUS_CHOICES, default='Active', verbose_name="状态")

@@ -1,0 +1,18 @@
+你好，{{center_name}}的用户
+
+你对{{center_name}}的资源访问权限即将过期。对于分配中的所有用户未能按时续订将终止对资源的访问。
+如要续订，请登录平台完成续订。 
+以下是即将过期的项目：
+{% for project_key, project_url in project_dict.items %}
+项目标题: {{project_key}}
+项目地址: {{ project_url.0 }}
+项目负责人: {{ project_url.1 }}
+
+    {% spaceless %}{% for days_key, days_value in expiration_dict.items %}
+    分配将在 {{days_key}} 后过期:{% for allocations in days_value %}{% if allocations.0 == project_url.0 %}  
+        {% spaceless %}{{ allocations.2 }}{% endspaceless %}{% endif %}{% endfor %}
+        {% endfor %}{% endspaceless %}
+{% endfor %}
+
+谢谢
+{{ signature }}

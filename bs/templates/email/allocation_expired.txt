@@ -1,0 +1,16 @@
+你好，{{center_name}}的用户
+
+你对{{center_name}} 的资源访问权限已经过期. 这些分配下的任何帐户现在都无法访问关联的资源. 
+如要续订，请登录平台完成续订。
+以下是已经过期的项目：
+{% for project_key, project_url in project_dict.items %}
+项目标题: {{project_key}}
+项目地址: {{ project_url.0 }}
+项目负责人: {{ project_url.1 }} 
+
+    {% spaceless %} {% for allocation_key, allocation_value in allocation_dict.items %}{% if allocation_key == project_url.0 %}Expired Allocation(s):{% for allocation in allocation_value %}{% for allocation_url, resource_name in allocation.items %}
+        {{ resource_name }}{% endfor %}{% endfor %}{% endif %}{% endfor %}{% endspaceless %}
+{% endfor %}
+
+谢谢
+{{ signature }}

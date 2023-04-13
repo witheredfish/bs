@@ -63,8 +63,8 @@ class AllocationAdmin(SimpleHistoryAdmin):
                AllocationUserNoteInline]
     list_filter = ('resources__resource_type__name',
                    'status', 'resources__name', 'is_locked')
-    search_fields = ['project__pi__username', 'project__pi__first_name', 'project__pi__last_name', 'resources__name',
-                     'allocationuser__user__first_name', 'allocationuser__user__last_name', 'allocationuser__user__username']
+    search_fields = ['project__pi__username', 'project__pi__first_name',  'resources__name',
+                     'allocationuser__user__first_name',  'allocationuser__user__username']
     filter_horizontal = ['resources', ]
     raw_id_fields = ('project',)
 
@@ -85,14 +85,12 @@ class AllocationAdmin(SimpleHistoryAdmin):
 
     def get_readonly_fields(self, request, obj):
         if obj is None:
-            # We are adding an object
             return super().get_readonly_fields(request)
         else:
             return self.readonly_fields_change
 
     def get_inline_instances(self, request, obj=None):
         if obj is None:
-            # We are adding an object
             return []
         else:
             return super().get_inline_instances(request)
@@ -129,11 +127,11 @@ class UsageValueFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('>=0', _('Greater than or equal to 0')),
-            ('>10', _('Greater than 10')),
-            ('>100', _('Greater than 100')),
-            ('>1000', _('Greater than 1000')),
-            ('>10000', _('Greater than 10000')),
+            ('>=0', _('大于等于0')),
+            ('>10', _('大于10')),
+            ('>100', _('大于100')),
+            ('>1000', _('大于1000')),
+            ('>10000', _('大于10000')),
         )
 
     def queryset(self, request, queryset):
@@ -164,10 +162,8 @@ class AllocationAttributeAdmin(SimpleHistoryAdmin):
                    'allocation__status', 'allocation__resources')
     search_fields = (
         'allocation__project__pi__first_name',
-        'allocation__project__pi__last_name',
         'allocation__project__pi__username',
         'allocation__allocationuser__user__first_name',
-        'allocation__allocationuser__user__last_name',
         'allocation__allocationuser__user__username',
     )
 
@@ -184,7 +180,7 @@ class AllocationAttributeAdmin(SimpleHistoryAdmin):
         return obj.allocation.status
 
     def pi(self, obj):
-        return '{} {} ({})'.format(obj.allocation.project.pi.first_name, obj.allocation.project.pi.last_name, obj.allocation.project.pi.username)
+        return '{} ({})'.format(obj.allocation.project.pi.first_name, obj.allocation.project.pi.username)
 
     def project(self, obj):
         return textwrap.shorten(obj.allocation.project.title, width=50)
@@ -200,14 +196,12 @@ class AllocationAttributeAdmin(SimpleHistoryAdmin):
 
     def get_readonly_fields(self, request, obj):
         if obj is None:
-            # We are adding an object
             return super().get_readonly_fields(request)
         else:
             return self.readonly_fields_change
 
     def get_inline_instances(self, request, obj=None):
         if obj is None:
-            # We are adding an object
             return []
         else:
             return super().get_inline_instances(request)
@@ -228,7 +222,6 @@ class AllocationUserAdmin(SimpleHistoryAdmin):
     list_filter = ('status', 'allocation__status', 'allocation__resources',)
     search_fields = (
         'user__first_name',
-        'user__last_name',
         'user__username',
     )
     raw_id_fields = ('allocation', 'user', )
@@ -237,7 +230,7 @@ class AllocationUserAdmin(SimpleHistoryAdmin):
         return obj.allocation.status
 
     def user_info(self, obj):
-        return '{} {} ({})'.format(obj.user.first_name, obj.user.last_name, obj.user.username)
+        return '{}({})'.format(obj.user.first_name, obj.user.username)
 
     def resource(self, obj):
         return obj.allocation.resources.first()
@@ -256,14 +249,12 @@ class AllocationUserAdmin(SimpleHistoryAdmin):
 
     def get_readonly_fields(self, request, obj):
         if obj is None:
-            # We are adding an object
             return super().get_readonly_fields(request)
         else:
             return self.readonly_fields_change
 
     def get_inline_instances(self, request, obj=None):
         if obj is None:
-            # We are adding an object
             return []
         else:
             return super().get_inline_instances(request)
@@ -281,11 +272,11 @@ class AllocationUserAdmin(SimpleHistoryAdmin):
         queryset.update(
             status=AllocationUserStatusChoice.objects.get(name='Removed'))
 
-    set_active.short_description = "Set Selected User's Status To Active"
+    set_active.short_description = "选择人员状态为“活跃”"
 
-    set_denied.short_description = "Set Selected User's Status To Denied"
+    set_denied.short_description = "选择人员状态为“失活”"
 
-    set_removed.short_description = "Set Selected User's Status To Removed"
+    set_removed.short_description = "选择人员状态为“移除”"
 
     actions = [
         set_active,
@@ -301,10 +292,10 @@ class ValueFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('>0', _('Greater than > 0')),
-            ('>10', _('Greater than > 10')),
-            ('>100', _('Greater than > 100')),
-            ('>1000', _('Greater than > 1000')),
+            ('>0', _('大于0')),
+            ('>10', _('大于10')),
+            ('>100', _('大于100')),
+            ('>1000', _('大于1000')),
         )
 
     def queryset(self, request, queryset):

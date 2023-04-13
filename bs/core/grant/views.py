@@ -40,7 +40,7 @@ class GrantCreateView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             Project, pk=self.kwargs.get('project_pk'))
         if project_obj.status.name not in ['Active', 'New', ]:
             messages.error(
-                request, '封存项目不能添加资助。')
+                request, '存档项目不能添加资助。')
             return HttpResponseRedirect(reverse('project-detail', kwargs={'pk': project_obj.pk}))
         else:
             return super().dispatch(request, *args, **kwargs)
