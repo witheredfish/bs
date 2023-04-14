@@ -51,6 +51,9 @@ INSTALLED_APPS += [
     'bs.core.project',
     'bs.core.resource',
     'bs.core.grant',
+    'bs.core.allocation',
+    'bs.core.publication',
+    'bs.core.research_output',
 ]
 
 MIDDLEWARE = [

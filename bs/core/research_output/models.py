@@ -8,7 +8,7 @@ from bs.core.project.models import Project
 
 
 class ResearchOutput(TimeStampedModel):
-    Project = models.ForeignKey(
+    project = models.ForeignKey(
         Project, on_delete=models.CASCADE, verbose_name="项目")
     title = models.CharField(max_length=128, blank=True, verbose_name="标题")
     description = models.TextField(
