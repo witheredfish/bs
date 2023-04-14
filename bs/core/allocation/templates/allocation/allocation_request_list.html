@@ -1,0 +1,81 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load common_tags %}
+{% load static %}
+
+
+{% block title %}
+审核分配请求
+{% endblock %}
+
+
+{% block content %}
+<h2>分配请求</h2>
+
+<hr>
+
+<p class="text-justify"> 
+  对于下面的每个分配请求，可以选择激活分配请求并查看分配的详细信息页面。
+</p>
+
+<p class="text-justify"> 
+  默认情况下，分配将激活{{ ALLOCATION_DEFAULT_ALLOCATION_LENGTH }}天。
+</p>
+
+{% if allocation_list %}
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">请求日期</th>
+          <th scope="col">项目标题</th>
+          <th scope="col">项目负责人</th>
+          <th scope="col">资源</th>
+          {% if PROJECT_ENABLE_PROJECT_REVIEW %}
+            <th scope="col" class="text-nowrap">项目审核状态</th>
+          {% endif %}
+          <th scope="col">状态</th>
+          <th scope="col">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for allocation in allocation_list %}
+          <tr>
+            <td>{{allocation.pk}}</td>
+            <td>{{ allocation.created|date:"M. d, Y" }}</td>
+            <td><a href="{% url 'project-detail' allocation.project.pk %}">{{allocation.project.title|truncatechars:50}}</a></td>
+            <td>{{allocation.project.pi.first_name}}({{allocation.project.pi.username}})</td>
+            <td>{{allocation.get_parent_resource}}</td>
+            {% if PROJECT_ENABLE_PROJECT_REVIEW %}
+              <td class="text-center">{{allocation.project|convert_status_to_icon}}</td>
+            {% endif %}
+            <td>{{allocation.status}}</td>
+            <td class="text-nowrap">
+                <form method="post" action="{% url 'allocation-detail' allocation.pk %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="status" value="{{ allocation_status_active.id }}" />
+                  <button type="submit" name="action" value="auto-approve" class="btn btn-success mr-1{% if allocation.get_information == '' %} confirm-activate{% endif %}">同意</button>
+                  <a href="{% url 'allocation-detail' allocation.pk %}" class="btn btn-primary mr-1">详细信息</a>
+                </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    没有分配请求
+  </div>
+{% endif %}
+
+<script>
+  $("#navbar-main > ul > li.active").removeClass("active");
+  $("#navbar-admin").addClass("active");
+  $("#navbar-allocation-requests").addClass("active");
+  $(document).on('click', '.confirm-activate', function(){
+      return confirm('是否要在不设置任何分配属性的情况下激活此分配请求？');
+  })
+</script>
+{% endblock %}

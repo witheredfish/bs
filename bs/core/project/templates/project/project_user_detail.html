@@ -1,0 +1,70 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+用户信息
+{% endblock %}
+
+
+{% block content %}
+<h2>用户信息</h2>
+
+<h3>项目: {{project.title}}</h3>
+<hr>
+
+<form action="{% url 'project-user-detail' project_obj.pk project_user_obj.pk %}" method="post">
+  {% csrf_token %}
+  <div class="card">
+    <div class="card-header"><i class="fas fa-user" aria-hidden="true"></i> 用户信息</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table">
+          <tr>
+            <th scope="row">用户名:</th>
+            <td>{{project_user_obj.user.username}}</td>
+          </tr>
+          <tr>
+            <th scope="row">姓名:</th>
+            <td>{{project_user_obj.user.first_name}}</td>
+          </tr>
+          <tr>
+            <th scope="row">邮箱:</th>
+            <td>{{project_user_obj.user.email}}</td>
+          </tr>
+          <tr>
+            <th scope="row">状态:</th>
+            <td>{{project_user_obj.status.name}}</td>
+          </tr>
+          {% if project_user_obj.user == project_user_obj.project.pi %}
+            <tr>
+              <th scope="row">角色:</th>
+              <td>{{project_user_obj.role}}</td>
+            </tr>
+            <tr>
+              <th scope="row">通知信息:</th>
+              <td>{{project_user_obj.enable_notifications|yesno:"Yes,No"}}</td>
+            </tr>
+          {% else %}
+            <tr>
+              <th scope="row">角色:</th>
+              <td>{{project_user_update_form.role}}</td>
+            </tr>
+            <tr>
+              <th scope="row">通知信息:</th>
+              <td>{{project_user_update_form.enable_notifications}}</td>
+            </tr>
+          {% endif %}
+        </table>
+      </div>
+    </div> 
+    <div class="card-footer">
+      {% if project_user_obj.user != project_user_obj.project.pi %}
+        <button type="submit" class="btn btn-primary">更新</button>
+      {% endif %}
+      <a class="btn btn-secondary" href="{% url 'project-detail' project_obj.pk %}" role="button">返回</a>
+    </div>
+  </div>
+</form>
+{% endblock%}

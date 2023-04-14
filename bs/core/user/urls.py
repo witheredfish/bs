@@ -6,8 +6,6 @@ import bs.core.user.views as user_views
 
 EXTRA_APPS = settings.INSTALLED_APPS
 
-# 未做 user-projects   user-allocations
-
 urlpatterns = [
     path('login',
          LoginView.as_view(
@@ -24,5 +22,11 @@ urlpatterns = [
     path('user-search-home/', user_views.UserSearchHome.as_view(),
          name='user-search-home'),
     path('user-search-results/', user_views.UserSearchResults.as_view(),
-         name='user-search-results')
+         name='user-search-results'),
+    path('user-projects-managers/', user_views.UserProjectsManagersView.as_view(),
+         name='user-projects-managers'),
+    path('user-projects-managers/<str:viewed_username>',
+         user_views.UserProjectsManagersView.as_view(), name='user-projects-managers'),
+    path('user-list-allocations/', user_views.UserListAllocations.as_view(),
+         name='user-list-allocations'),
 ]

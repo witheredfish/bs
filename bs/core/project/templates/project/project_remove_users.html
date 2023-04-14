@@ -2,20 +2,19 @@
 {% load crispy_forms_tags %}
 {% load static %}
 
-
-{% block title %}
-添加分配人员
+{% block title %} 
+删除人员
 {% endblock %}
 
-
 {% block content %}
-<h2>给{{allocation.project.title}}添加分配人员</h2>
+<h2>从{{project.title}}删除人员</h2>
 <hr>
 
 {% if formset %}
   <div class="card border-light">
     <div class="card-body">
-      <form action="{% url 'allocation-add-users' allocation.pk %}" method="post">
+
+      <form action="{% url 'project-remove-users' project.pk %}" method="post">
         {% csrf_token %}
         <div class="table-responsive">
           <table class="table table-sm table-hover">
@@ -28,6 +27,7 @@
                 <th scope="col">用户名</th>
                 <th scope="col">姓名</th>
                 <th scope="col">邮箱</th>
+                <th scope="col">角色</th>
               </tr>
             </thead>
             <tbody>
@@ -38,6 +38,7 @@
                   <td>{{ form.username.value }}</td>
                   <td>{{ form.first_name.value }}</td>
                   <td>{{ form.email.value }}</td>
+                  <td>{{ form.role.value }}</td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -45,30 +46,28 @@
         </div>
         {{ formset.management_form }}
         <div>
-          <button type="submit" class="btn btn-primary"><i class="fas
-              fa-user-plus"></i> 将所选人员添加到分配</button>
-          <a class="btn btn-secondary" href="{% url 'allocation-detail' allocation.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i>
-            返回</a>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-user-minus" aria-hidden="true"></i> 删除所选人员</button>
+          <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回</a>
           <br>
         </div>
       </form>
     </div>
   </div>
 {% else %}
-  <a class="btn btn-secondary mb-3" href="{% url 'allocation-detail' allocation.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回</a>
+  <a class="btn btn-secondary mb-3" href="{% url 'project-detail' project.pk %}" role="button"><i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回</a> 
   <div class="alert alert-info">
-    所有项目人员都添加至分配当中
+    没有人员可删除！
   </div>
 {% endif %}
 
 <script>
-  $("#selectAll").click(function () {
+  $("#selectAll").click(function() {
     $("input[name^='userform-']").prop('checked', $(this).prop('checked'));
   });
 
-  $("input[name^='userform-']").click(function (ele) {
+  $("input[name^='userform-']").click(function(ele) {
     var id = $(this).attr('id');
-    if ( id != "selectAll") {
+    if (id != "selectAll") {
       $("#selectAll").prop('checked', false);
     }
   });

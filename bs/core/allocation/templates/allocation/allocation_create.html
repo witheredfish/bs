@@ -1,0 +1,163 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load common_tags %}
+{% load static %}
+
+
+{% block title %}
+请求新分配
+{% endblock %}
+
+
+{% block content %}
+<h2>请求新分配 <br><small>项目为: {{ project.title }}</small></h2>
+<hr>
+
+<p class="text-justify"> {% settings_value 'CENTER_NAME' %}的资源可用于此项目的请求。
+  如果您需要访问多个，请为每个提交单独的分配请求。
+  对于每个请求，您必须提供说明：如何使用该资源来进一步实现项目的研究目标。</p>
+
+<form method="post">
+  {% csrf_token %}
+  {{form |crispy}}
+
+  <div id="eula-div" style="display: none;">
+    <textarea style="display:none;min-width:100%" id="eula"  rows="15"></textarea>
+    <br>
+    <p class="font-weight-bold">点击提交即表示您同意条款和条件。</p>
+  </div>
+
+  <input class="btn btn-primary" type="submit" value="提交" />
+  <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button">返回</a><br>
+</form>
+
+<div id="Modal" class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">添加新账户</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="error_div"></div>
+        *名称中不能有空格
+        <form id="allocation_account_form">
+          {{AllocationAccountForm |crispy}}
+          <button id="myFormSubmit" class="btn btn-primary" type="submit">提交</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+    <button type="button" class="btn btn-primary">发送消息</button>
+  </div>
+</div>
+
+<script>
+  var resources_form_default_quantities = {{ resources_form_default_quantities | safe }};
+  var resources_form_label_texts = {{ resources_form_label_texts | safe }};
+  var resources_with_accounts = {{ resources_with_accounts | safe }};
+  var resources_with_eula = {{ resources_with_eula | safe }};
+
+  $(document).ready(function () {
+    $('<br><input id="selectAll" class="check" type="checkbox"> <strong>Select All Users</strong>').insertAfter($("#div_id_users > label"))
+    $("#id_resource").trigger('change');
+
+    $("#selectAll").click(function () {
+      $("input[name^='users']").prop('checked', $(this).prop('checked'));
+    });
+
+    $("input[name^='users']").click(function (ele) {
+      var id = $(this).attr('id');
+      if (id != "selectAll") {
+        $("#selectAll").prop('checked', false);
+      }
+    });
+  });
+
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = jQuery.trim(cookies[i]);
+        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  $('#modal_link').on("click", function () {
+    $('#Modal').modal('show');
+  });
+  $(function () {
+    $('#myFormSubmit').click(function (e) {
+      e.preventDefault();
+      $(function () {
+
+        var new_account_name = $('#allocation_account_form').serializeArray()[0].value.trim();
+        $('#id_allocation_account').prepend('<option value="' + new_account_name + '">' + new_account_name + '</option>');
+        $('#id_allocation_account option[value=' + new_account_name + ']').prop('selected', true);
+        $.ajax({
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          type: "POST",
+          url: "/allocation/add-allocation-account/",
+          data: {
+            name: new_account_name,
+          }, 
+          success: function (json) {
+            console.log(json);
+            $('#allocation_account_form')[0].reset();
+            $('#Modal').modal('toggle');
+            $('#error_div').html('<div></div>');
+          },
+          error: function (xhr, errmsg, err) {
+            $('#error_div').html('<div class="alert alert-danger" role="alert">' + jQuery.parseJSON(xhr.responseText)["name"] + '</div>');
+            console.log(xhr);
+            console.log(errmsg);
+            console.log(err);
+          }
+        });
+      });
+    });
+  });
+
+  $("#id_resource").change(function () {
+    var resource_id = $("#id_resource option:selected").val();
+    if (resources_form_default_quantities[resource_id]) {
+      var label = $('label[for="id_quantity"]');
+      if (resources_form_label_texts[resource_id]) {
+        label.html(resources_form_label_texts[resource_id])
+      } else {
+        label.html('<strong>数量*</strong>')
+      }
+      $('#id_quantity').val(resources_form_default_quantities[resource_id])
+      $('#div_id_quantity').show();
+    } else {
+      $('#div_id_quantity').hide();
+      $('#id_quantity').val(1)
+    }
+
+    if (resources_with_accounts.includes(parseInt(resource_id))) {
+      $('#div_id_allocation_account').show();
+    } else {
+      $('#div_id_allocation_account').hide();
+    }
+
+    if (resources_with_eula[resource_id]) {
+      $('#eula').text(resources_with_eula[resource_id])
+      $('#eula-div').show();
+      $('#eula').show();
+    } else {
+      $('#eula').hide();
+      $('#eula-div').hide();
+    }
+  });
+</script>
+{% endblock %}

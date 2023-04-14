@@ -68,7 +68,7 @@ class Allocation(TimeStampedModel):
             ('can_view_all_allocations', '可以查看分配'),
             ('can_review_allocation_requests',
              '可以审核所有分配请求'),
-            ('can_manage_invoice', '可以管理发票'),
+            ('can_manage_invoice', '可以管理账单'),
         )
 
     def clean(self):

@@ -1,0 +1,133 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+分配账单信息
+{% endblock %}
+
+
+{% block content %}
+{% if allocation.project.status.name == 'Archived' %}
+  <div class="alert alert-warning" role="alert">
+    这个项目已封存，不能进行修改。
+  </div>
+{% endif %}
+
+<div class="mb-3">
+  <h2>分配账单</h2>
+  <hr>
+</div>
+
+{% if form.non_field_errors %}
+  <div class="alert alert-danger" role="alert">
+    {{ form.non_field_errors }}
+  </div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3><i class="fas fa-list" aria-hidden="true"></i> 分配信息</h3>
+  </div>
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <tr>
+            <th scope="row" class="text-nowrap">项目:</th>
+            <td>
+              {% if request.user.is_superuser %}
+                <a href="{% url 'project-detail' allocation.project.pk %}">{{ allocation.project }}</a>
+              {% else %}
+                {{ allocation.project }}
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">项目负责人:</th>
+            <td>
+              {{ allocation.project.pi.first_name }}
+              ({{ allocation.project.pi.email }})
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">资源{{ allocation.resources.all|pluralize }}:</th>
+            <td>{{ allocation.get_resources_as_string }}</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">数量:</th>
+            <td>
+              {{ allocation.quantity }}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">状态:</th>
+            <td>
+              {{ form.status }}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">创建日期:</th>
+            <td>{{ allocation.created }}</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">修改日期:</th>
+            <td>{{ allocation.modified }}</td>
+          </tr>
+        </table>
+      </div>
+      {% if request.user.is_superuser or perms.allocation.can_manage_invoice%}
+        <button type="submit" class="btn btn-success float-right"><i class="fas fa-sync" aria-hidden="true"></i> 更新</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="d-inline"><i class="fas fa-users" aria-hidden="true"></i> 系统管理员的描述</h3>
+    <span class="badge badge-secondary">{{allocation.allocationusernote_set.count}}</span>
+    <div class="float-right">
+      <a class="btn btn-success" href="{% url 'allocation-add-invoice-note' allocation.pk %}" role="button">
+        <i class="fas fa-plus" aria-hidden="true"></i> 添加描述
+      </a>
+      <a class="btn btn-danger" href="{% url 'allocation-delete-invoice-note' allocation.pk %}" role="button">
+        <i class="fas fa-minus" aria-hidden="true"></i> 删除描述
+      </a>
+    </div>
+  </div>
+  <div class="card-body">
+    {% if allocation.allocationusernote_set.all %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">内容</th>
+              <th scope="col">描述人</th>
+              <th scope="col">修改日期</th>
+              <th scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for note in allocation.allocationusernote_set.all %}
+              <tr>
+                <td>{{ note.note }}</td>
+                <td>{{ note.author.first_name }}({{ note.author.username }})</td>
+                <td>{{ note.modified }}</td>
+                <td><a href="{% url 'allocation-update-invoice-note' note.pk %}"><i class="fas fa-edit" aria-hidden="true"></i><span class="sr-only">编辑</span></a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info" role="alert">
+        <i class="fa fa-info-circle" aria-hidden="true"></i> 没有来自系统管理员的信息
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

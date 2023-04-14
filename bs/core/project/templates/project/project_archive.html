@@ -1,0 +1,37 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+封存项目
+{% endblock %}
+
+
+{% block content %}
+<h2>封存项目</h2>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h3 class="card-title">
+      项目负责人:
+      {{ project.pi.first_name }}
+      ({{ project.pi.username }})
+      <a href="mailto:{{ project.pi.email }}"><i class="far fa-envelope" aria-hidden="true"></i><span class="sr-only">邮箱</span></a>
+    </h3>
+    <p class="card-text text-justify"><strong>描述: </strong>{{ project.description }}</p>
+    <p class="card-text text-justify"><strong>学科领域: </strong>{{ project.field_of_science }}</p>
+    <p class="card-text text-justify"><strong>状态: </strong>{{ project.status}}</p>
+  </div>
+</div>
+
+<div class="alert alert-danger" role="alert">
+  <form method="post">{% csrf_token %}
+    <p>是否要封存此项目？
+      这将使此项目的所有分配过期，
+      这将禁用组对这些分配中资源的访问。</p>
+    <input class="btn btn-danger" type="submit" value="Yes" />
+    <a class="btn btn-secondary" href="{% url 'project-detail' project.id %}" role="button">取消</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+分配更改请求
+{% endblock %}
+
+
+{% block content %}
+
+<h2>{{ allocation.get_parent_resource }}请求更改，项目为：{{ allocation.project.title }}</h2>
+<hr>
+
+<p class="text-justify">
+  使用下面的表格请求更改现有分配。对于每个更改，您必须提供理由。
+</p>
+
+<form action="{% url 'allocation-change' allocation.pk %}" method="post">
+  <div class="card mb-3">
+    <div class="card-header">
+        <h3><i class="fas fa-list" aria-hidden="true"></i> 分配信息</h3>   
+    </div>
+
+    <div class="card-body">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <tr>
+              <th scope="row" class="text-nowrap">项目:</th>
+              <td><a href="{% url 'project-detail' allocation.project.pk %}">{{ allocation.project }}</a></td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">资源{{ allocation.resources.all|pluralize }}:</th>
+              <td>{{ allocation.get_resources_as_string }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">理由:</th>
+              <td>{{ allocation.justification }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">状态:</th>
+              <td>{{ allocation.status }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">开始日期:</th>
+              <td>{{ allocation.start_date }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">结束日期:</th>
+                <td>
+                  {{ allocation.end_date }}
+                  {% if allocation.is_locked and allocation.status.name == 'Active' and allocation.expires_in <= 60 and allocation.expires_in >= 0 %}
+                  <span class="badge badge-warning"><i class="far fa-clock" aria-hidden="true"></i>
+                    在{{allocation.expires_in}}天后过期{{allocation.expires_in|pluralize}} -不可延期
+                  </span>
+                  {% endif %}
+                </td>
+            </tr>
+            {% if allocation.is_changeable %}
+              <tr>
+                <th scope="row" class="text-nowrap">请求延期:</th>
+                <td>
+                    {{ form.end_date_extension }}
+                </td>
+              </tr>
+            {% endif %}
+            <tr>
+              <th scope="row" class="text-nowrap">描述:</th>
+              <td>{{allocation.description|default_if_none:""}}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">创建时间:</th>
+              <td>{{ allocation.created|date:"M. d, Y" }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">修改时间:</th>
+              <td>{{ allocation.modified|date:"M. d, Y" }}</td>
+            </tr>
+            <tr>
+              {% if allocation.is_locked %}
+                <th scope="row" class="text-nowrap">锁定</th>
+                <td><i class="fas fa-lock" aria-hidden="true"></i></td>
+              {% else %}
+                <th scope="row" class="text-nowrap">解锁</th>
+                <td><i class="fas fa-lock-open" aria-hidden="true"></i></td>
+              {% endif %}
+            </tr>
+          </table>
+        </div>
+    </div>
+  </div>
+
+  {% if formset %}
+      <div class="card mb-3">
+        <div class="card-header">
+          <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i>分配属性</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead>
+                <tr>
+                  <th scope="col">属性</th>
+                  <th scope="col">值</th>
+                  <th scope="col">请求新值</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for form in formset %}
+                    <tr>
+                      <td>{{form.name.value}}</td>
+                      <td>{{form.value.value}}</td>
+                      <td>{{form.new_value}}</td>
+                    </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {{ formset.management_form }}
+        </div>
+      </div>
+    {% endif %}
+
+    <div>
+      {{form.justification | as_crispy_field }}
+      <input class="btn btn-success" type="submit" value="提交" />
+      <a class="btn btn-secondary" href="{% url 'allocation-detail' allocation.pk %}" role="button">返回</a><br>
+    </div>
+</form>
+
+<script>
+</script>
+{% endblock %}

@@ -657,7 +657,7 @@ class AllocationAddUsersView(LoginRequiredMixin, UserPassesTestMixin, TemplateVi
                                                   allocation_user_pk=allocation_user_obj.pk)
 
             messages.success(
-                request, f'添加{users_added_count}个用户')
+                request, f'添加{users_added_count}个人员')
         else:
             for error in formset.errors:
                 messages.error(request, error)
@@ -669,14 +669,13 @@ class AllocationRemoveUsersView(LoginRequiredMixin, UserPassesTestMixin, Templat
     template_name = 'allocation/allocation_remove_users.html'
 
     def test_func(self):
-        """ UserPassesTestMixin Tests"""
         allocation_obj = get_object_or_404(
             Allocation, pk=self.kwargs.get('pk'))
         if allocation_obj.has_perm(self.request.user, AllocationPermission.MANAGER):
             return True
 
         messages.error(
-            self.request, 'You do not have permission to remove users from allocation.')
+            self.request, '没有权限给该分配删除人员')
         return False
 
     def dispatch(self, request, *args, **kwargs):
@@ -685,9 +684,9 @@ class AllocationRemoveUsersView(LoginRequiredMixin, UserPassesTestMixin, Templat
 
         message = None
         if allocation_obj.is_locked and not self.request.user.is_superuser:
-            message = 'You cannot modify this allocation because it is locked! Contact support for details.'
+            message = '您无法修改已锁定的分配！'
         elif allocation_obj.status.name not in ['Active', 'New', 'Renewal Requested', ]:
-            message = f'You cannot remove users from a allocation with status {allocation_obj.status.name}.'
+            message = f'不能以{allocation_obj.status.name}删除人员'
         if message:
             messages.error(request, message)
             return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
@@ -703,7 +702,6 @@ class AllocationRemoveUsersView(LoginRequiredMixin, UserPassesTestMixin, Templat
 
             {'username': user.username,
              'first_name': user.first_name,
-             'last_name': user.last_name,
              'email': user.email, }
 
             for user in users_to_remove
@@ -761,11 +759,1128 @@ class AllocationRemoveUsersView(LoginRequiredMixin, UserPassesTestMixin, Templat
                     allocation_remove_user.send(sender=self.__class__,
                                                 allocation_user_pk=allocation_user_obj.pk)
 
-            user_plural = "user" if remove_users_count == 1 else "users"
             messages.success(
-                request, f'Removed {remove_users_count} {user_plural} from allocation.')
+                request, f'删除{remove_users_count}个人员')
         else:
             for error in formset.errors:
                 messages.error(request, error)
 
         return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': pk}))
+
+
+class AllocationAttributeCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = AllocationAttribute
+    form_class = AllocationAttributeCreateForm
+    template_name = 'allocation/allocation_allocationattribute_create.html'
+
+    def test_func(self):
+
+        if self.request.user.is_superuser:
+            return True
+        messages.error(
+            self.request, '你没有权限添加分配属性')
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        context['allocation'] = allocation_obj
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        initial['allocation'] = allocation_obj
+        return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['allocation'].widget = forms.HiddenInput()
+        return form
+
+    def get_success_url(self):
+        return reverse('allocation-detail', kwargs={'pk': self.kwargs.get('pk')})
+
+
+class AllocationAttributeDeleteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'allocation/allocation_allocationattribute_delete.html'
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+        messages.error(
+            self.request, '你没有权限删除分配属性')
+        return False
+
+    def get_allocation_attributes_to_delete(self, allocation_obj):
+
+        allocation_attributes_to_delete = AllocationAttribute.objects.filter(
+            allocation=allocation_obj)
+        allocation_attributes_to_delete = [
+
+            {
+                'pk': attribute.pk,
+                'name': attribute.allocation_attribute_type.name,
+                'value': attribute.value,
+            }
+
+            for attribute in allocation_attributes_to_delete
+        ]
+
+        return allocation_attributes_to_delete
+
+    def get(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        allocation_attributes_to_delete = self.get_allocation_attributes_to_delete(
+            allocation_obj)
+        context = {}
+
+        if allocation_attributes_to_delete:
+            formset = formset_factory(AllocationAttributeDeleteForm, max_num=len(
+                allocation_attributes_to_delete))
+            formset = formset(
+                initial=allocation_attributes_to_delete, prefix='attributeform')
+            context['formset'] = formset
+        context['allocation'] = allocation_obj
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        allocation_attributes_to_delete = self.get_allocation_attributes_to_delete(
+            allocation_obj)
+
+        formset = formset_factory(AllocationAttributeDeleteForm, max_num=len(
+            allocation_attributes_to_delete))
+        formset = formset(
+            request.POST, initial=allocation_attributes_to_delete, prefix='attributeform')
+
+        attributes_deleted_count = 0
+
+        if formset.is_valid():
+            for form in formset:
+                form_data = form.cleaned_data
+                if form_data['selected']:
+
+                    attributes_deleted_count += 1
+
+                    allocation_attribute = AllocationAttribute.objects.get(
+                        pk=form_data['pk'])
+                    allocation_attribute.delete()
+
+            messages.success(
+                request, f'删除{attributes_deleted_count}个分配属性')
+        else:
+            for error in formset.errors:
+                messages.error(request, error)
+
+        return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': pk}))
+
+
+class AllocationNoteCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = AllocationUserNote
+    fields = '__all__'
+    template_name = 'allocation/allocation_note_create.html'
+
+    def test_func(self):
+
+        if self.request.user.is_superuser:
+            return True
+        messages.error(
+            self.request, '你没有权限添加分配描述')
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        context['allocation'] = allocation_obj
+        return context
+
+    def get_initial(self):
+        initial = super().get_initial()
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        author = self.request.user
+        initial['allocation'] = allocation_obj
+        initial['author'] = author
+        return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields['allocation'].widget = forms.HiddenInput()
+        form.fields['author'].widget = forms.HiddenInput()
+        form.order_fields(['allocation', 'author', 'note', 'is_private'])
+        return form
+
+    def get_success_url(self):
+        return reverse('allocation-detail', kwargs={'pk': self.kwargs.get('pk')})
+
+
+class AllocationRequestListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'allocation/allocation_request_list.html'
+    login_url = '/'
+
+    def test_func(self):
+
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_review_allocation_requests'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限审核分配请求')
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        allocation_list = Allocation.objects.filter(
+            status__name__in=['New', 'Renewal Requested', 'Paid', 'Approved',])
+        context['allocation_status_active'] = AllocationStatusChoice.objects.get(
+            name='Active')
+        context['allocation_list'] = allocation_list
+        context['PROJECT_ENABLE_PROJECT_REVIEW'] = PROJECT_ENABLE_PROJECT_REVIEW
+        context['ALLOCATION_DEFAULT_ALLOCATION_LENGTH'] = ALLOCATION_DEFAULT_ALLOCATION_LENGTH
+        return context
+
+
+class AllocationRenewView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'allocation/allocation_renew.html'
+
+    def test_func(self):
+        allocation_obj = get_object_or_404(
+            Allocation, pk=self.kwargs.get('pk'))
+        if allocation_obj.has_perm(self.request.user, AllocationPermission.MANAGER):
+            return True
+
+        messages.error(
+            self.request, '你没有权限续订分配')
+        return False
+
+    def dispatch(self, request, *args, **kwargs):
+        allocation_obj = get_object_or_404(
+            Allocation, pk=self.kwargs.get('pk'))
+
+        if not ALLOCATION_ENABLE_ALLOCATION_RENEWAL:
+            messages.error(
+                request, '分配续订已禁用。如果要在截止日期之后继续使用此资源，请求新的分配。')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        if allocation_obj.status.name not in ['Active', ]:
+            messages.error(
+                request, f'不能以{allocation_obj.status.name}续订分配')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        if allocation_obj.project.needs_review:
+            messages.error(
+                request, '你无法续订分配，因为你必须先更新你的项目。')
+            return HttpResponseRedirect(reverse('project-detail', kwargs={'pk': allocation_obj.project.pk}))
+
+        if allocation_obj.expires_in > 60:
+            messages.error(
+                request, '现在审查你的分配还为时过早。')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_users_in_allocation(self, allocation_obj):
+        users_in_allocation = allocation_obj.allocationuser_set.exclude(
+            status__name__in=['Removed']).exclude(user__pk__in=[allocation_obj.project.pi.pk, self.request.user.pk]).order_by('user__username')
+
+        users = [
+
+            {'username': allocation_user.user.username,
+             'first_name': allocation_user.user.first_name,
+             'email': allocation_user.user.email, }
+
+            for allocation_user in users_in_allocation
+        ]
+
+        return users
+
+    def get(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        users_in_allocation = self.get_users_in_allocation(allocation_obj)
+        context = {}
+
+        if users_in_allocation:
+            formset = formset_factory(
+                AllocationReviewUserForm, max_num=len(users_in_allocation))
+            formset = formset(initial=users_in_allocation, prefix='userform')
+            context['formset'] = formset
+
+            context['resource_eula'] = {}
+            if allocation_obj.get_parent_resource.resourceattribute_set.filter(resource_attribute_type__name='eula').exists():
+                value = allocation_obj.get_parent_resource.resourceattribute_set.get(
+                    resource_attribute_type__name='eula').value
+                context['resource_eula'].update({'eula': value})
+
+        context['allocation'] = allocation_obj
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        users_in_allocation = self.get_users_in_allocation(allocation_obj)
+
+        formset = formset_factory(
+            AllocationReviewUserForm, max_num=len(users_in_allocation))
+        formset = formset(
+            request.POST, initial=users_in_allocation, prefix='userform')
+
+        allocation_renewal_requested_status_choice = AllocationStatusChoice.objects.get(
+            name='Renewal Requested')
+        allocation_user_removed_status_choice = AllocationUserStatusChoice.objects.get(
+            name='Removed')
+        project_user_remove_status_choice = ProjectUserStatusChoice.objects.get(
+            name='Removed')
+
+        allocation_obj.status = allocation_renewal_requested_status_choice
+        allocation_obj.save()
+
+        if not users_in_allocation or formset.is_valid():
+
+            if users_in_allocation:
+                for form in formset:
+                    user_form_data = form.cleaned_data
+                    user_obj = get_user_model().objects.get(
+                        username=user_form_data.get('username'))
+                    user_status = user_form_data.get('user_status')
+
+                    if user_status == 'keep_in_project_only':
+                        allocation_user_obj = allocation_obj.allocationuser_set.get(
+                            user=user_obj)
+                        allocation_user_obj.status = allocation_user_removed_status_choice
+                        allocation_user_obj.save()
+
+                        allocation_remove_user.send(
+                            sender=self.__class__, allocation_user_pk=allocation_user_obj.pk)
+
+                    elif user_status == 'remove_from_project':
+                        for active_allocation in allocation_obj.project.allocation_set.filter(status__name__in=(
+                            'Active', 'Denied', 'New', 'Paid', 'Payment Pending',
+                                'Payment Requested', 'Payment Declined', 'Renewal Requested', 'Unpaid',)):
+
+                            allocation_user_obj = active_allocation.allocationuser_set.get(
+                                user=user_obj)
+                            allocation_user_obj.status = allocation_user_removed_status_choice
+                            allocation_user_obj.save()
+                            allocation_remove_user.send(
+                                sender=self.__class__, allocation_user_pk=allocation_user_obj.pk)
+
+                        project_user_obj = ProjectUser.objects.get(
+                            project=allocation_obj.project,
+                            user=user_obj)
+                        project_user_obj.status = project_user_remove_status_choice
+                        project_user_obj.save()
+
+            send_allocation_admin_email(allocation_obj, '分配已续订',
+                                        'email/allocation_renewed.txt', domain_url=get_domain_url(self.request))
+            messages.success(request, '分配成功续订')
+        else:
+            if not formset.is_valid():
+                for error in formset.errors:
+                    messages.error(request, error)
+        return HttpResponseRedirect(reverse('project-detail', kwargs={'pk': allocation_obj.project.pk}))
+
+
+class AllocationInvoiceListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Allocation
+    template_name = 'allocation/allocation_invoice_list.html'
+    context_object_name = 'allocation_list'
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_manage_invoice'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限管理账单')
+        return False
+
+    def get_queryset(self):
+
+        allocations = Allocation.objects.filter(
+            status__name__in=['Paid', 'Payment Pending', 'Payment Requested', 'Payment Declined', ])
+        return allocations
+
+
+class AllocationInvoiceDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    model = Allocation
+    template_name = 'allocation/allocation_invoice_detail.html'
+    context_object_name = 'allocation'
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_manage_invoice'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限查看账单')
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        allocation_users = allocation_obj.allocationuser_set.exclude(
+            status__name__in=['Removed']).order_by('user__username')
+
+        alloc_attr_set = allocation_obj.get_attribute_set(self.request.user)
+
+        attributes_with_usage = [
+            a for a in alloc_attr_set if hasattr(a, 'allocationattributeusage')]
+        attributes = [a for a in alloc_attr_set]
+
+        guage_data = []
+        invalid_attributes = []
+        for attribute in attributes_with_usage:
+            try:
+                guage_data.append(generate_guauge_data_from_usage(attribute.allocation_attribute_type.name,
+                                                                  float(attribute.value), float(attribute.allocationattributeusage.value)))
+            except ValueError:
+                logger.error("分配属性 '%s' 不是int类型但是有用法",
+                             attribute.allocation_attribute_type.name)
+                invalid_attributes.append(attribute)
+
+        for a in invalid_attributes:
+            attributes_with_usage.remove(a)
+
+        context['guage_data'] = guage_data
+        context['attributes_with_usage'] = attributes_with_usage
+        context['attributes'] = attributes
+
+        context['is_allowed_to_update_project'] = allocation_obj.project.has_perm(
+            self.request.user, ProjectPermission.UPDATE)
+        context['allocation_users'] = allocation_users
+
+        if self.request.user.is_superuser:
+            notes = allocation_obj.allocationusernote_set.all()
+        else:
+            notes = allocation_obj.allocationusernote_set.filter(
+                is_private=False)
+
+        context['notes'] = notes
+        context['ALLOCATION_ENABLE_ALLOCATION_RENEWAL'] = ALLOCATION_ENABLE_ALLOCATION_RENEWAL
+        return context
+
+    def get(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        initial_data = {
+            'status': allocation_obj.status,
+        }
+
+        form = AllocationInvoiceUpdateForm(initial=initial_data)
+
+        context = self.get_context_data()
+        context['form'] = form
+        context['allocation'] = allocation_obj
+
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        initial_data = {'status': allocation_obj.status, }
+        form = AllocationInvoiceUpdateForm(request.POST, initial=initial_data)
+
+        if form.is_valid():
+            form_data = form.cleaned_data
+            allocation_obj.status = form_data.get('status')
+            allocation_obj.save()
+            messages.success(request, '分配已更新')
+        else:
+            for error in form.errors:
+                messages.error(request, error)
+        return HttpResponseRedirect(reverse('allocation-invoice-detail', kwargs={'pk': pk}))
+
+
+class AllocationAddInvoiceNoteView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = AllocationUserNote
+    template_name = 'allocation/allocation_add_invoice_note.html'
+    fields = ('is_private', 'note',)
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_manage_invoice'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限管理账单')
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        allocation_users = allocation_obj.allocationuser_set.exclude(
+            status__name__in=['Removed']).order_by('user__username')
+
+        alloc_attr_set = allocation_obj.get_attribute_set(self.request.user)
+
+        attributes_with_usage = [
+            a for a in alloc_attr_set if hasattr(a, 'allocationattributeusage')]
+        attributes = list(alloc_attr_set)
+
+        guage_data = []
+        invalid_attributes = []
+        for attribute in attributes_with_usage:
+            try:
+                guage_data.append(generate_guauge_data_from_usage(
+                    attribute.allocation_attribute_type.name,
+                    float(attribute.value),
+                    float(attribute.allocationattributeusage.value)))
+            except ValueError:
+                logger.error("分配属性 '%s' 不是int类型但是有用法",
+                             attribute.allocation_attribute_type.name)
+                invalid_attributes.append(attribute)
+
+        for a in invalid_attributes:
+            attributes_with_usage.remove(a)
+
+        context['guage_data'] = guage_data
+        context['attributes_with_usage'] = attributes_with_usage
+        context['attributes'] = attributes
+
+        context['is_allowed_to_update_project'] = allocation_obj.project.has_perm(
+            self.request.user, ProjectPermission.UPDATE)
+
+        context['allocation_users'] = allocation_users
+
+        if self.request.user.is_superuser:
+            notes = allocation_obj.allocationusernote_set.all()
+        else:
+            notes = allocation_obj.allocationusernote_set.filter(
+                is_private=False)
+
+        context['notes'] = notes
+        context['ALLOCATION_ENABLE_ALLOCATION_RENEWAL'] = ALLOCATION_ENABLE_ALLOCATION_RENEWAL
+        return context
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        context['allocation'] = allocation_obj
+        return context
+
+    def form_valid(self, form):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        obj = form.save(commit=False)
+        obj.author = self.request.user
+        obj.allocation = allocation_obj
+        obj.save()
+        allocation_obj.save()
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('allocation-invoice-detail', kwargs={'pk': self.object.allocation.pk})
+
+
+class AllocationUpdateInvoiceNoteView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = AllocationUserNote
+    template_name = 'allocation/allocation_update_invoice_note.html'
+    fields = ('is_private', 'note',)
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_manage_invoice'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限管理账单')
+        return False
+
+    def get_success_url(self):
+        return reverse_lazy('allocation-invoice-detail', kwargs={'pk': self.object.allocation.pk})
+
+
+class AllocationDeleteInvoiceNoteView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'allocation/allocation_delete_invoice_note.html'
+
+    def test_func(self):
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_manage_invoice'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限管理账单')
+        return False
+
+    def get_notes_to_delete(self, allocation_obj):
+
+        notes_to_delete = [
+            {
+                'pk': note.pk,
+                'note': note.note,
+                'author':  note.author.username,
+            }
+            for note in allocation_obj.allocationusernote_set.all()
+        ]
+
+        return notes_to_delete
+
+    def get(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        notes_to_delete = self.get_notes_to_delete(allocation_obj)
+        context = {}
+        if notes_to_delete:
+            formset = formset_factory(
+                AllocationInvoiceNoteDeleteForm, max_num=len(notes_to_delete))
+            formset = formset(initial=notes_to_delete, prefix='noteform')
+            context['formset'] = formset
+        context['allocation'] = allocation_obj
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+        notes_to_delete = self.get_notes_to_delete(allocation_obj)
+
+        formset = formset_factory(
+            AllocationInvoiceNoteDeleteForm, max_num=len(notes_to_delete))
+        formset = formset(
+            request.POST, initial=notes_to_delete, prefix='noteform')
+
+        if formset.is_valid():
+            for form in formset:
+                note_form_data = form.cleaned_data
+                if note_form_data['selected']:
+                    note_obj = AllocationUserNote.objects.get(
+                        pk=note_form_data.get('pk'))
+                    note_obj.delete()
+        else:
+            for error in formset.errors:
+                messages.error(request, error)
+
+        return HttpResponseRedirect(reverse_lazy('allocation-invoice-detail', kwargs={'pk': allocation_obj.pk}))
+
+
+class AllocationAccountCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = AllocationAccount
+    template_name = 'allocation/allocation_allocationaccount_create.html'
+    form_class = AllocationAccountForm
+
+    def test_func(self):
+
+        if not ALLOCATION_ACCOUNT_ENABLED:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        if self.request.user.userprofile.is_pi:
+            return True
+
+        messages.error(
+            self.request, '你没有权限添加分配属性')
+        return False
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        if self.request.is_ajax():
+            return JsonResponse(form.errors, status=400)
+        return response
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        response = super().form_valid(form)
+        if self.request.is_ajax():
+            data = {
+                'pk': self.object.pk,
+            }
+            return JsonResponse(data)
+        return response
+
+    def get_success_url(self):
+        return reverse_lazy('allocation-account-list')
+
+
+class AllocationAccountListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = AllocationAccount
+    template_name = 'allocation/allocation_account_list.html'
+    context_object_name = 'allocationaccount_list'
+
+    def test_func(self):
+
+        if not ALLOCATION_ACCOUNT_ENABLED:
+            return False
+        if self.request.user.is_superuser:
+            return True
+        if self.request.user.userprofile.is_pi:
+            return True
+
+        messages.error(
+            self.request, '你没有权限管理账单')
+        return False
+
+    def get_queryset(self):
+        return AllocationAccount.objects.filter(user=self.request.user)
+
+
+class AllocationChangeDetailView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    formset_class = AllocationAttributeUpdateForm
+    template_name = 'allocation/allocation_change_detail.html'
+
+    def test_func(self):
+        allocation_change_obj = get_object_or_404(
+            AllocationChangeRequest, pk=self.kwargs.get('pk'))
+
+        if self.request.user.has_perm('allocation.can_view_all_allocations'):
+            return True
+
+        if allocation_change_obj.allocation.has_perm(self.request.user, AllocationPermission.MANAGER):
+            return True
+
+        return False
+
+    def get_allocation_attributes_to_change(self, allocation_change_obj):
+        attributes_to_change = allocation_change_obj.allocationattributechangerequest_set.all()
+
+        attributes_to_change = [
+
+            {'change_pk': attribute_change.pk,
+             'attribute_pk': attribute_change.allocation_attribute.pk,
+             'name': attribute_change.allocation_attribute.allocation_attribute_type.name,
+             'value': attribute_change.allocation_attribute.value,
+             'new_value': attribute_change.new_value,
+             }
+
+            for attribute_change in attributes_to_change
+        ]
+
+        return attributes_to_change
+
+    def get_context_data(self, **kwargs):
+        context = {}
+
+        allocation_change_obj = get_object_or_404(
+            AllocationChangeRequest, pk=self.kwargs.get('pk'))
+
+        allocation_attributes_to_change = self.get_allocation_attributes_to_change(
+            allocation_change_obj)
+
+        if allocation_attributes_to_change:
+            formset = formset_factory(self.formset_class, max_num=len(
+                allocation_attributes_to_change))
+            formset = formset(
+                initial=allocation_attributes_to_change, prefix='attributeform')
+            context['formset'] = formset
+
+        context['allocation_change'] = allocation_change_obj
+        context['attribute_changes'] = allocation_attributes_to_change
+
+        return context
+
+    def get(self, request, *args, **kwargs):
+
+        allocation_change_obj = get_object_or_404(
+            AllocationChangeRequest, pk=self.kwargs.get('pk'))
+
+        allocation_change_form = AllocationChangeForm(
+            initial={'justification': allocation_change_obj.justification,
+                     'end_date_extension': allocation_change_obj.end_date_extension})
+        allocation_change_form.fields['justification'].disabled = True
+        if allocation_change_obj.status.name != 'Pending':
+            allocation_change_form.fields['end_date_extension'].disabled = True
+        if not self.request.user.is_staff and not self.request.user.is_superuser:
+            allocation_change_form.fields['end_date_extension'].disabled = True
+
+        note_form = AllocationChangeNoteForm(
+            initial={'notes': allocation_change_obj.notes})
+
+        context = self.get_context_data()
+
+        context['allocation_change_form'] = allocation_change_form
+        context['note_form'] = note_form
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        if not self.request.user.is_superuser:
+            messages.error(
+                request, '你没有权限更新分配更改请求')
+            return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+        allocation_change_obj = get_object_or_404(
+            AllocationChangeRequest, pk=pk)
+        allocation_change_form = AllocationChangeForm(request.POST,
+                                                      initial={'justification': allocation_change_obj.justification,
+                                                               'end_date_extension': allocation_change_obj.end_date_extension})
+        allocation_change_form.fields['justification'].required = False
+
+        allocation_attributes_to_change = self.get_allocation_attributes_to_change(
+            allocation_change_obj)
+
+        if allocation_attributes_to_change:
+            formset = formset_factory(self.formset_class, max_num=len(
+                allocation_attributes_to_change))
+            formset = formset(
+                request.POST, initial=allocation_attributes_to_change, prefix='attributeform')
+
+        note_form = AllocationChangeNoteForm(
+            request.POST, initial={'notes': allocation_change_obj.notes})
+
+        if not note_form.is_valid():
+            allocation_change_form = AllocationChangeForm(
+                initial={'justification': allocation_change_obj.justification})
+            allocation_change_form.fields['justification'].disabled = True
+
+            context = self.get_context_data()
+
+            context['note_form'] = note_form
+            context['allocation_change_form'] = allocation_change_form
+            return render(request, self.template_name, context)
+
+        notes = note_form.cleaned_data.get('notes')
+
+        action = request.POST.get('action')
+        if action not in ['update', 'approve', 'deny']:
+            return HttpResponseBadRequest("Invalid request")
+
+        if action == 'deny':
+            allocation_change_obj.notes = notes
+
+            allocation_change_status_denied_obj = AllocationChangeStatusChoice.objects.get(
+                name='Denied')
+            allocation_change_obj.status = allocation_change_status_denied_obj
+
+            allocation_change_obj.save()
+
+            messages.success(request, '对{}的分配更改请求已被{}({})拒绝'.format(
+                allocation_change_obj.allocation.resources.first(),
+                allocation_change_obj.allocation.project.pi.first_name,
+                allocation_change_obj.allocation.project.pi.username)
+            )
+
+            send_allocation_customer_email(allocation_change_obj.allocation,
+                                           '分配更改请求已拒绝',
+                                           'email/allocation_change_denied.txt',
+                                           domain_url=get_domain_url(self.request))
+
+            return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+        if not allocation_change_form.is_valid() or (allocation_attributes_to_change and not formset.is_valid()):
+            for error in allocation_change_form.errors:
+                messages.error(request, error)
+            if allocation_attributes_to_change:
+                attribute_errors = ""
+                for error in formset.errors:
+                    if error:
+                        attribute_errors += error.get('__all__')
+                messages.error(request, attribute_errors)
+            return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+        allocation_change_obj.notes = notes
+
+        if action == 'update' and allocation_change_obj.status.name != 'Pending':
+            allocation_change_obj.save()
+            messages.success(request, '分配更改请求已更新')
+            return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+        form_data = allocation_change_form.cleaned_data
+        end_date_extension = form_data.get('end_date_extension')
+
+        if not allocation_attributes_to_change and end_date_extension == 0:
+            messages.error(
+                request, '你必须更改分配')
+            return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+        if end_date_extension != allocation_change_obj.end_date_extension:
+            allocation_change_obj.end_date_extension = end_date_extension
+
+        if allocation_attributes_to_change:
+            for entry in formset:
+                formset_data = entry.cleaned_data
+                new_value = formset_data.get('new_value')
+                attribute_change = AllocationAttributeChangeRequest.objects.get(
+                    pk=formset_data.get('change_pk'))
+
+                if new_value != attribute_change.new_value:
+                    attribute_change.new_value = new_value
+                    attribute_change.save()
+
+        if action == 'update':
+
+            allocation_change_obj.save()
+            messages.success(request, '分配更改请求已更新')
+
+        elif action == 'approve':
+            allocation_change_status_active_obj = AllocationChangeStatusChoice.objects.get(
+                name='Approved')
+            allocation_change_obj.status = allocation_change_status_active_obj
+
+            if allocation_change_obj.end_date_extension > 0:
+                new_end_date = allocation_change_obj.allocation.end_date + relativedelta(
+                    days=allocation_change_obj.end_date_extension)
+                allocation_change_obj.allocation.end_date = new_end_date
+
+                allocation_change_obj.allocation.save()
+
+            allocation_change_obj.save()
+            if allocation_attributes_to_change:
+                attribute_change_list = allocation_change_obj.allocationattributechangerequest_set.all()
+                for attribute_change in attribute_change_list:
+                    attribute_change.allocation_attribute.value = attribute_change.new_value
+                    attribute_change.allocation_attribute.save()
+
+            messages.success(request, '对{}的分配更改请求已被{}({})同意'.format(
+                allocation_change_obj.allocation.get_parent_resource,
+                allocation_change_obj.allocation.project.pi.first_name,
+                allocation_change_obj.allocation.project.pi.username)
+            )
+
+            allocation_change_approved.send(
+                sender=self.__class__,
+                allocation_pk=allocation_change_obj.allocation.pk,
+                allocation_change_pk=allocation_change_obj.pk,)
+
+            send_allocation_customer_email(allocation_change_obj.allocation,
+                                           '分配更改请求已同意',
+                                           'email/allocation_change_approved.txt',
+                                           domain_url=get_domain_url(self.request))
+
+        return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': pk}))
+
+
+class AllocationChangeListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'allocation/allocation_change_list.html'
+    login_url = '/'
+
+    def test_func(self):
+
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_review_allocation_requests'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限审核分配请求')
+
+        return False
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        allocation_change_list = AllocationChangeRequest.objects.filter(
+            status__name__in=['Pending', ])
+        context['allocation_change_list'] = allocation_change_list
+        context['PROJECT_ENABLE_PROJECT_REVIEW'] = PROJECT_ENABLE_PROJECT_REVIEW
+        return context
+
+
+class AllocationChangeView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    formset_class = AllocationAttributeChangeForm
+    template_name = 'allocation/allocation_change.html'
+
+    def test_func(self):
+        allocation_obj = get_object_or_404(
+            Allocation, pk=self.kwargs.get('pk'))
+        if allocation_obj.has_perm(self.request.user, AllocationPermission.MANAGER):
+            return True
+
+        messages.error(
+            self.request, '你没有权限请求更改。')
+
+        return False
+
+    def dispatch(self, request, *args, **kwargs):
+        allocation_obj = get_object_or_404(
+            Allocation, pk=self.kwargs.get('pk'))
+
+        if allocation_obj.project.needs_review:
+            messages.error(
+                request, '你不能请求更改此分配，因为你必须先更新项目。')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        if allocation_obj.project.status.name not in ['Active', 'New', ]:
+            messages.error(
+                request, '你不能请求更改已封存的项目。')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        if allocation_obj.is_locked:
+            messages.error(
+                request, '你不能请求已锁定的项目')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        if allocation_obj.status.name not in ['Active', 'Renewal Requested', 'Payment Pending', 'Payment Requested', 'Paid']:
+            messages.error(
+                request, f'你不能请求更改"{allocation_obj.status.name}"的分配')
+            return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': allocation_obj.pk}))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_allocation_attributes_to_change(self, allocation_obj):
+        attributes_to_change = allocation_obj.allocationattribute_set.filter(
+            allocation_attribute_type__is_changeable=True)
+
+        attributes_to_change = [
+            {
+                'pk': attribute.pk,
+                'name': attribute.allocation_attribute_type.name,
+                'value': attribute.value,
+            }
+            for attribute in attributes_to_change
+        ]
+
+        return attributes_to_change
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+
+        allocation_obj = get_object_or_404(
+            Allocation, pk=self.kwargs.get('pk'))
+
+        form = AllocationChangeForm(**self.get_form_kwargs())
+        context['form'] = form
+
+        allocation_attributes_to_change = self.get_allocation_attributes_to_change(
+            allocation_obj)
+
+        if allocation_attributes_to_change:
+            formset = formset_factory(self.formset_class, max_num=len(
+                allocation_attributes_to_change))
+            formset = formset(
+                initial=allocation_attributes_to_change, prefix='attributeform')
+            context['formset'] = formset
+        context['allocation'] = allocation_obj
+        context['attributes'] = allocation_attributes_to_change
+        return render(request, self.template_name, context)
+
+    def post(self, request, *args, **kwargs):
+        change_requested = False
+        attribute_changes_to_make = set({})
+
+        pk = self.kwargs.get('pk')
+        allocation_obj = get_object_or_404(Allocation, pk=pk)
+
+        form = AllocationChangeForm(**self.get_form_kwargs())
+
+        allocation_attributes_to_change = self.get_allocation_attributes_to_change(
+            allocation_obj)
+
+        if allocation_attributes_to_change:
+            formset = formset_factory(self.formset_class, max_num=len(
+                allocation_attributes_to_change))
+            formset = formset(
+                request.POST, initial=allocation_attributes_to_change, prefix='attributeform')
+
+            if not form.is_valid() or not formset.is_valid():
+                attribute_errors = ""
+                for error in form.errors:
+                    messages.error(request, error)
+                for error in formset.errors:
+                    if error:
+                        attribute_errors += error.get('__all__')
+                messages.error(request, attribute_errors)
+                return HttpResponseRedirect(reverse('allocation-change', kwargs={'pk': pk}))
+            form_data = form.cleaned_data
+
+            if form_data.get('end_date_extension') != 0:
+                change_requested = True
+
+            for entry in formset:
+                formset_data = entry.cleaned_data
+
+                new_value = formset_data.get('new_value')
+
+                if new_value != "":
+                    change_requested = True
+                    allocation_attribute = AllocationAttribute.objects.get(
+                        pk=formset_data.get('pk'))
+                    attribute_changes_to_make.add(
+                        (allocation_attribute, new_value))
+
+            if not change_requested:
+                messages.error(request, '你必须请求一个更改')
+                return HttpResponseRedirect(reverse('allocation-change', kwargs={'pk': pk}))
+
+        if not form.is_valid():
+            for error in form.errors:
+                messages.error(request, error)
+            return HttpResponseRedirect(reverse('allocation-change', kwargs={'pk': pk}))
+
+        form_data = form.cleaned_data
+
+        if not allocation_attributes_to_change and form_data.get('end_date_extension') == 0:
+            messages.error(request, '你必须请求一个更改')
+            return HttpResponseRedirect(reverse('allocation-change', kwargs={'pk': pk}))
+
+        end_date_extension = form_data.get('end_date_extension')
+        justification = form_data.get('justification')
+        change_request_status_obj = AllocationChangeStatusChoice.objects.get(
+            name='Pending')
+
+        allocation_change_request_obj = AllocationChangeRequest.objects.create(
+            allocation=allocation_obj,
+            end_date_extension=end_date_extension,
+            justification=justification,
+            status=change_request_status_obj
+        )
+
+        for attribute in attribute_changes_to_make:
+            attribute_change_request_obj = AllocationAttributeChangeRequest.objects.create(
+                allocation_change_request=allocation_change_request_obj,
+                allocation_attribute=attribute[0],
+                new_value=attribute[1]
+            )
+
+        messages.success(
+            request, '分配更改请求已提交')
+
+        send_allocation_admin_email(allocation_obj,
+                                    '新的分配更改请求',
+                                    'email/new_allocation_change_request.txt',
+                                    url_path=reverse('allocation-change-list'),
+                                    domain_url=get_domain_url(self.request))
+        return HttpResponseRedirect(reverse('allocation-detail', kwargs={'pk': pk}))
+
+
+class AllocationChangeDeleteAttributeView(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = '/'
+
+    def test_func(self):
+
+        if self.request.user.is_superuser:
+            return True
+
+        if self.request.user.has_perm('allocation.can_review_allocation_requests'):
+            return True
+
+        messages.error(
+            self.request, '你没有权限更新分配更改请求')
+        return False
+
+    def get(self, request, pk):
+        allocation_attribute_change_obj = get_object_or_404(
+            AllocationAttributeChangeRequest, pk=pk)
+        allocation_change_pk = allocation_attribute_change_obj.allocation_change_request.pk
+
+        allocation_attribute_change_obj.delete()
+
+        messages.success(
+            request, '已成功删除分配属性更改请求。')
+        return HttpResponseRedirect(reverse('allocation-change-detail', kwargs={'pk': allocation_change_pk}))

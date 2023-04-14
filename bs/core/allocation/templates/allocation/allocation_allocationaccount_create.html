@@ -1,0 +1,21 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load common_tags %}
+{% load static %}
+
+
+{% block title %}
+请求新分配
+{% endblock %}
+
+
+{% block content %}
+<h2>添加可与分配关联的帐户</h2>
+
+<form method="post">
+  {% csrf_token %}
+  {{form |crispy}}
+  <input class="btn btn-primary" type="submit" value="提交" />
+  <a class="btn btn-secondary" href="{% url 'allocation-account-list' %}" role="button">返回</a><br>
+</form>
+{% endblock %}

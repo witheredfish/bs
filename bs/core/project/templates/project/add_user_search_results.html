@@ -1,0 +1,95 @@
+{% load crispy_forms_tags %}
+
+<form action="{% url 'project-add-users' pk %}" method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    {% if number_of_usernames_found %}
+      <strong>从搜索项：{{number_of_usernames_searched}} 找到 {{number_of_usernames_found}}  </strong>
+    {% elif matches %}
+      <strong>找到 {{matches|length}} 符合{{matches|length|pluralize}}</strong>
+    {% endif %}
+    <br>
+    {% if usernames_not_found %}
+      用户名{{usernames_not_found|length|pluralize}} 没从数据库中找到: {{ usernames_not_found|join:", " }}.
+    {% endif %}
+    <br>
+    {% if users_already_in_project %} 
+      用户{{users_already_in_project|length|pluralize}}已经在项目中:
+      {{users_already_in_project|join:", "}}
+    {% endif %}
+  </div>
+
+  {% if matches %}
+    <div class="card bg-light mb-3 {{div_allocation_class}}">
+      <div class="card-header">可获得的分配</div>
+      <div class="card-body">
+        {{allocation_form|crispy}}
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-hover">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="check" id="selectAll"></th>
+            <th scope="col">#</th>
+            <th scope="col">用户名</th>
+            <th scope="col">姓名</th>
+            <th scope="col">邮箱</th>
+            <th scope="col">角色</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for form in formset %}
+            <tr>
+              <td>{{ form.selected }}</td>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ form.username.value }}</td>
+              <td>{{ form.first_name.value }}</td>
+              <td>{{ form.email.value }}</td>
+              <td>{{ form.role }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {{ formset.management_form }}
+
+    <input id="q" type="hidden" name="q" value="{{user_search_string}}">
+    <input id="search_by" type="hidden" name="search_by" value="{{search_by}}">
+    <div class="mb-3">
+      {% if matches %}
+        <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus" aria-hidden="true"></i> 添加所选人员</button>
+      {% endif %}
+      <a class="btn btn-secondary" href="{% url 'project-detail' pk %}" role="button">返回</a><br>
+    </div>
+  {% else %}
+    <div class="alert alert-info text-center">
+      无结果！
+    </div>
+  {% endif %}
+</form>
+
+<script>
+  $("#selectAll").click(function () {
+    $("input[name^='userform-']").prop('checked', $(this).prop('checked'));
+  });
+
+  $("input[name^='userform-']").click(function (ele) {
+    var id = $(this).attr('id');
+    if ( id != "selectAll") {
+      $("#selectAll").prop('checked', false);
+    }
+  });
+
+  $("#id_allocationform-allocation_0").click(function () {
+    $("input[name^='allocationform-']").prop('checked', $(this).prop('checked'));
+  });
+
+  $("input[name^='allocationform-']").click(function (ele) {
+    var id = $(this).attr('id');
+    if ( id != "id_allocationform-allocation_0") {
+      $("#id_allocationform-allocation_0").prop('checked', false);
+    }
+  });
+</script>

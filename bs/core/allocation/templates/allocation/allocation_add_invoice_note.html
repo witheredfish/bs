@@ -1,0 +1,21 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+添加分配账单描述
+{% endblock %}
+
+
+{% block content %}
+<h2>给{{allocation.get_resources_as_string}}添加分配账单描述，项目负责人为{{allocation.project.pi.username}}</h2>
+<hr>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form|crispy }}
+  <input class="btn btn-success" type="submit" value="添加">
+  <a class="btn btn-secondary" href="{% url 'allocation-invoice-detail' allocation.pk %}" role="button">返回</a>
+</form>
+{% endblock %}

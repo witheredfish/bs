@@ -1,0 +1,24 @@
+{% load common_tags %}
+<div class="table-responsive">
+  <table id="fos-table" class="table table-bordered">
+    <thead>
+      <tr>
+        <th scope="col">学科领域</th>
+        <th scope="col">活跃的分配总数</th>
+        <th scope="col">用户总数</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for key, val in allocations_by_fos.items %}
+        <tr>
+          <td>{{key}}</td>
+          <td>{{val}}</td>
+          <td>{{active_users_by_fos|get_value_from_dict:key}}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<strong>活跃用户总数: {{total_allocations_users}}</strong>
+<br>
+<strong>项目负责人总数: {{active_pi_count}}</strong>

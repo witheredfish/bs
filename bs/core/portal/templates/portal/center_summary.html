@@ -1,0 +1,185 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load common_tags %}
+{% load humanize %}
+
+
+{% block title %}
+中心概览
+{% endblock %}
+
+
+{% block content %}
+<h2>{% settings_value 'CENTER_NAME' %} 科学影响</h2>
+<hr>
+
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="fas fa-newspaper" aria-hidden="true"></i> 用户输入的出版物
+  </div>
+  <div class="card-body">
+    <div id="chartPublications"></div>
+    <strong>出版物总数:</strong> {{total_publications_count}}
+  </div>
+</div>
+
+
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="far fa-newspaper" aria-hidden="true"></i>用户输入的研究产出
+  </div>
+  <div class="card-body">
+    <strong>研究产出总数:</strong> {{total_research_outputs_count}}
+  </div>
+</div>
+
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="fas fa-trophy" aria-hidden="true"></i> 用户资助
+  </div>
+  <div class="card-body">
+    <div id="chartGrants"></div>
+    <hr>
+    <strong> 资助总额:</strong> ${{grants_total}} <br>
+    <strong> 仅授予项目负责人:</strong> ${{grants_total_pi_only}} <br>
+    <strong> 仅授予合作负责人:</strong> ${{grants_total_copi_only}} <br>
+    <strong> 仅授予高级人员:</strong> ${{grants_total_sp_only}}
+  </div>
+</div>
+
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="fas fa-flask" aria-hidden="true"></i> 按科学领域划分的分配和用户
+  </div>
+  <div id="allocation-by-fos" class="card-body">
+    <div class="text-center">
+      <button type="button" class="btn btn-primary"><i class="fas fa-sync fa-spin fa-fw" aria-hidden="true"></i> 获取数据 <span
+          class="sr-only">...</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3 border-primary">
+  <div class="card-header bg-primary text-white">
+    <i class="fas fa-trophy"></i> 资源和分配
+  </div>
+  <div id="allocation-summary" class="card-body">
+    <div class="text-center">
+      <button type="button" class="btn btn-primary"><i class="fas fa-sync fa-spin fa-fw" aria-hidden="true"></i> 获取数据 <span
+          class="sr-only">...</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+  $("#navbar-main > ul > li.active").removeClass("active")
+  $("#navbar-center-summary").addClass("active")
+
+  $(document).ready(function () {
+    $('#fos-table').DataTable({
+      "iDisplayLength": 10,
+      "bSortClasses": false,
+      "order": [
+        [1, "desc"]
+      ]
+    });
+
+    drawPublications();
+    drawGrantsByAgency();
+    get_allocation_by_fos()
+    get_allocation_summary();
+  });
+
+  function drawPublications() {
+    if (publication_by_year_bar_chart_data['columns'].length != 0) {
+      var chart = c3.generate({
+        bindto: '#chartPublications',
+        data: publication_by_year_bar_chart_data,
+        legend: {
+          show: false,
+          item: {
+            onclick: function (id) { }
+          }
+        },
+        axis: {
+          x: {
+            label: {
+              text: '年份',
+              position: 'outer-center'
+            }
+          },
+          y: {
+            label: '出版物数量',
+            position: 'outer-middle'
+          }
+        }
+      });
+    };
+  }
+
+  function drawGrantsByAgency() {
+    if (grants_agency_chart_data['columns'].length != 0) {
+      var chart = c3.generate({
+        bindto: '#chartGrants',
+        data: grants_agency_chart_data,
+        donut: {
+          title: "资助"
+        },
+        legend: {
+          item: {
+            onclick: function (id) { }
+          }
+        }
+      });
+    }
+  }
+
+  var grants_agency_chart_data = {{ grants_agency_chart_data | safe }}
+  var publication_by_year_bar_chart_data = {{ publication_by_year_bar_chart_data | safe }}
+
+  function get_allocation_summary() {
+    $.ajax({
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      type: "GET",
+      url: "/allocation-summary",
+      success: function (data) {
+        $('#allocation-summary').html(data);
+      }
+    });
+  };
+
+  function get_allocation_by_fos() {
+    $.ajax({
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      type: "GET",
+      url: "/allocation-by-fos",
+      success: function (data) {
+        $('#allocation-by-fos').html(data);
+        $('#fos-table').DataTable({
+          "iDisplayLength": 10,
+          "bSortClasses": false,
+          "order": [
+            [1, "desc"]
+          ]
+        });
+      }
+    });
+  };
+
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = jQuery.trim(cookies[i]);
+        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+</script>
+{% endblock %}

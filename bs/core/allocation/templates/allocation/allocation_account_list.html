@@ -1,0 +1,44 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+分配账户
+{% endblock %}
+
+
+{% block content %}
+<h2>分配账户</h2>
+
+<div class="card mb-3 bg-light">
+  <div class="card-body">
+    <a class="btn btn-success" href="{% url 'add-allocation-account' %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i>添加分配账户</a>
+  </div>
+</div>
+
+{% if allocationaccount_list %}
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th scope="col">名称</th>
+          <th scope="col">创建时间</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for account in allocationaccount_list %}
+          <tr>
+            <td>{{ account.name }}</td>
+            <td>{{ account.created }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="alert alert-info">
+    你没有添加任何分配账户！
+  </div>
+{% endif %}
+{% endblock %}

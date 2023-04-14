@@ -1,0 +1,175 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+资源信息
+{% endblock %}
+
+
+{% block content %}
+
+
+<div class="mb-3">
+  <h2>资源信息</h2>
+  <hr>
+</div>
+
+<div class="card mb-3">
+  <div class="card-header">
+      <h3><i class="fas fa-list" aria-hidden="true"></i> 资源信息</h3>   
+  </div>
+  
+  <div class="card-body">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm">
+          <tr>
+            <th scope="row" class="text-nowrap">名称:</th>
+            <td>{{ resource.name }}</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">描述:</th>
+            <td>{{ resource.description }}</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">资源类型:</th>
+            <td>{{ resource.resource_type }}</td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">主资源:</th>
+            <td>
+              {% if resource.parent_resource %}
+                <a href="{% url 'resource-detail' resource.parent_resource.pk %}">
+                  {{ resource.parent_resource }}
+                </a>
+              {% else %}
+                {{ resource.parent_resource }}
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">关联资源:</th>
+            <td>
+            {% if resource.linked_resources.all %}
+              {% for resource in resource.linked_resources.all %}
+                <a href="{% url 'resource-detail' resource.pk %}">{{ resource }}</a> <br>
+              {% endfor %}
+            {% else %}
+              None
+            {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th scope="row" class="text-nowrap">私有性:</th>
+            <td>
+              {% if resource.is_public %}
+                公共
+              {% else %}
+                私有
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </div>
+  </div>
+</div>
+
+{% if attributes or request.user.is_superuser %}
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i> 资源属性</h3>
+      <div class="float-right">
+        {% if request.user.is_superuser %}
+          <a class="btn btn-success" href="{% url 'resource-attribute-add' resource.pk %}" role="button">
+            <i class="fas fa-plus" aria-hidden="true"></i> 添加资源属性
+          </a>
+          <a class="btn btn-danger" href="{% url 'resource-attribute-delete' resource.pk %}" role="button">
+            <i class="fas fa-minus" aria-hidden="true"></i> 删除资源属性
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if attributes %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th scope="col">名称</th>
+                <th scope="col">值</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for attribute in attributes %}
+                  <tr>
+                    <td>{{attribute.resource_attribute_type.name}}</td>
+                    <td>{{attribute.value}}</td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-header">
+    <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i>子资源</h3>
+  </div>
+
+  <div class="card-body">
+    {% if child_resources %}
+      <div class="table-responsive">
+        <table id="child_resource_table" class="table table-bordered table-sm">
+          <thead>
+            <tr>
+              <th scope="col">资源名称</th>
+              <th scope="col">保修日期</th>
+              <th scope="col">结束日期</th>
+              <th scope="col">供应商</th>
+              <th scope="col">序号</th>
+              <th scope="col">类型</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for child in child_resources %}
+                <tr>
+                  <td><a href="{% url 'resource-detail' child.object.pk %}">{{child.object}}</a></td>
+                  <td>{{child.WarrantyExpirationDate}}</td>
+                  <td>{{child.ServiceEnd}}</td>
+                  <td>{{child.Vendor}}</td>
+                  <td>{{child.SerialNumber}}</td>
+                  <td>{{child.Model}}</td>
+                </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+          没有子资源
+        </div>
+      {% endif %}
+  </div>
+</div>
+
+
+<script>
+  $(document).ready(function () { 
+    $('#child_resource_table').DataTable({
+      lengthMenu: [5, 10, 20, 50, 100],
+      "pageLength": 5,
+      "ordering": false,
+      'aoColumnDefs': [{
+        'bSortable': false,
+        'aTargets': ['nosort']
+      }]
+    });
+  });
+</script>
+{% endblock %}

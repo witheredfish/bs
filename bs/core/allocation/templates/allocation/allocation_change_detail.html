@@ -1,0 +1,219 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+分配更改信息
+{% endblock %}
+
+
+{% block content %}
+
+<h2>对{{ allocation_change.allocation.get_parent_resource }}的分配更改请求，项目为{{ allocation_change.allocation.project.title }}</h2>
+<hr>
+
+  {% if allocation_change.status.name == "Approved" %}
+    <div class="alert alert-success" role="alert">
+      <h4 class="alert-heading">{{allocation_change.status.name}}</h4>
+      {% if allocation_change.notes %}
+        <hr>
+        <p class="mb-0">{{ allocation_change.notes }}</p>
+      {% endif %}
+  </div>
+  {% elif allocation_change.status.name == "Denied"%}
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading">{{allocation_change.status.name}}</h4>
+      {% if allocation_change.notes %}
+        <hr>
+        <p class="mb-0">{{ allocation_change.notes }}</p>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="alert alert-info" role="alert">
+      <h4 class="alert-heading">{{allocation_change.status.name}}</h4>
+      {% if allocation_change.notes %}
+        <hr>
+        <p class="mb-0">{{ allocation_change.notes }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <form method="post">
+  <div class="card mb-3">
+    <div class="card-header">
+        <h3 class="d-inline"><i class="fas fa-list" aria-hidden="true"></i> 分配信息</h3>
+    </div>
+
+    <div class="card-body">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <tr>
+              <th scope="row" class="text-nowrap">项目:</th>
+              <td><a href="{% url 'project-detail' allocation_change.allocation.project.pk %}">{{ allocation_change.allocation.project }}</a></td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">分配资源{{ allocation_change.allocation.resources.all|pluralize }}:</th>
+              <td>{{ allocation_change.allocation.get_resources_as_string }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">理由:</th>
+              <td>{{ allocation_change.allocation.justification }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">状态:</th>
+              <td>{{ allocation_change.allocation.status }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">开始日期:</th>
+              <td>{{ allocation_change.allocation.start_date }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">介绍日期:</th>
+                <td>
+                  {{ allocation_change.allocation.end_date }}
+                  {% if allocation_change.allocation.is_locked and allocation_change.allocation.status.name == 'Approved' and allocation_change.allocation.expires_in <= 60 and allocation_change.allocation.expires_in >= 0 %}
+                  <span class="badge badge-warning"><i class="far fa-clock" aria-hidden="true"></i>
+                    在 {{allocation_change.allocation.expires_in}} 天后过期{{allocation_change.allocation.expires_in|pluralize}} -不可续签
+                  </span>
+                  {% endif %}
+                </td>
+            </tr>
+            {% if allocation_change.allocation.is_changeable %}
+              <tr>
+                  <th scope="row" class="text-nowrap">请求延期:</th>
+                  <td>
+                    {{allocation_change_form.end_date_extension}}
+                  </td>
+              </tr>
+            {% endif %}
+            <tr>
+              <th scope="row" class="text-nowrap">描述:</th>
+              <td>{{ allocation_change.allocation.description|default_if_none:"" }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">更改请求日期:</th>
+              <td>{{ allocation_change.created|date:"M. d, Y" }}</td>
+            </tr>
+            <tr>
+              <th scope="row" class="text-nowrap">更新时间:</th>
+              <td>{{ allocation_change.modified|date:"M. d, Y" }}</td>
+            </tr>
+            <tr>
+              {% if allocation_change.allocation.is_locked %}
+                <th scope="row" class="text-nowrap">锁定</th>
+                <td><i class="fas fa-lock" aria-hidden="true"></i></td>
+              {% else %}
+                <th scope="row" class="text-nowrap">解锁</th>
+                <td><i class="fas fa-lock-open" aria-hidden="true"></i></td>
+              {% endif %}
+            </tr>
+          </table>
+        </div>
+    </div>
+  </div>
+
+  
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i> 分配属性</h3>
+    </div>
+    <div class="card-body">
+      {% if attribute_changes %}
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm">
+            <thead>
+              <tr>
+                <th scope="col">属性</th>
+                {% if allocation_change.status.name == 'Pending' %}
+                  <th scope="col">值</th>
+                {% endif %}
+                <th scope="col">请求新值</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for form in formset %}
+                <tr>
+                  <td>{{form.name.value}}</td>
+                  {% if allocation_change.status.name == 'Pending' %}
+                    <td>{{form.value.value}}</td>
+                    {% if request.user.is_superuser %}
+                      <td>
+                        {{form.new_value}}
+                        <a href="{% url 'allocation-attribute-change-delete' form.change_pk.value %}" class="float-right confirm-delete">
+                          <i class="far fa-trash-alt fa-lg"></i>
+                        </a>
+                      </td>
+                    {% else %}
+                      <td>{{form.new_value.value}}</td>
+                    {% endif %}
+                  {% else %}
+                    {% if form.new_value.value == '' %}
+                      <td>无</td>
+                    {% else %}
+                      <td>{{form.new_value.value}}</td>
+                    {% endif %}
+                  {% endif %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert">
+          <i class="fas fa-info-circle" aria-hidden="true"></i>
+            没有请求分配属性更改！
+        </div>
+      {% endif %}
+      {{ formset.management_form }}
+    </div>
+  </div>
+
+  <p class="card-text text-justify">{{allocation_change_form.justification | as_crispy_field}}</p>
+
+  <hr/>
+
+  {% if request.user.is_superuser %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i> 操作</h3>
+      </div>
+      <div class="card-body">
+
+          
+            {% csrf_token %}
+            {{note_form.notes | as_crispy_field}}
+            <div style="float: right;">
+              {% if allocation_change.status.name == 'Pending' %}
+                <button type="submit" name="action" value="approve" class="btn btn-success mr-1">同意</button>
+                <button type="submit" name="action" value="deny" class="btn btn-danger mr-1">拒绝</button>
+              {% endif %}
+                <button type="submit" name="action" value="update" class="btn btn-primary float-right">
+                <i class="fas fa-sync" aria-hidden="true"></i> 更新
+              </button>
+            </div>
+        </div>   
+      </div>
+    </div>
+  {% endif %}
+</form>
+
+
+  <a class="btn btn-secondary" href="{% url 'allocation-detail' allocation_change.allocation.pk %}" role="button">
+    查看分配
+  </a>
+  {% if request.user.is_superuser %}
+    <a class="btn btn-secondary" href="{% url 'allocation-change-list' %}">
+      查看所有分配更改请求
+    </a>
+  {% endif %}
+  <br>
+
+<script>
+  $(document).on('click', '.confirm-delete', function(){
+      return confirm('是否要删除此请求的分配属性更改？');
+  })
+</script>
+{% endblock %}
+

@@ -1,0 +1,109 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block title %}
+续订分配
+{% endblock %}
+
+
+{% block content %}
+<h2>给{{allocation.project.title}}续订{{allocation.get_parent_resource }}</h2>
+<hr>
+
+<div class="card border-light">
+  <div class="card-body">
+    <form action="{% url 'allocation-renew' allocation.pk %}" method="post">
+      {% csrf_token %}
+
+      {{ formset.management_form }}
+
+      {% if formset %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">用户名</th>
+                <th scope="col">姓名</th>
+                <th scope="col">邮箱</th>
+                <th scope="col">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for form in formset %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>{{ form.username.value }}</td>
+                  <td>{{ form.first_name.value }}</td>
+                  <td>{{ form.email.value }}</td>
+                  <td>{{ form.user_status }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th scope="col">用户名</th>
+                <th scope="col">姓名</th>
+                <th scope="col">邮箱</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>{{ allocation.project.pi.username }}</td>
+                <td>{{ allocation.project.pi.first_name }}</td>
+                <td>{{ allocation.project.pi.email }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p>此分配中没有其他用户。要添加新用户，完成续订后返回项目页面。</p>
+        <hr>
+      {% endif %}
+
+      <div id="eula-div" style="display: none;">
+        <textarea style="display:none;min-width:100%" id="eula"  rows="15">
+        </textarea>
+        <br>
+        <p class="font-weight-bold">点击提交即表示同意条款和条件。</p>
+      </div>
+      <div class="mb-3">
+        <button type="submit" class="btn btn-primary">提交</button>
+        <a class="btn btn-secondary" href="{% url 'allocation-detail' allocation.pk %}" role="button">
+          <i class="fas fa-long-arrow-left" aria-hidden="true"></i> 返回
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  var resource_eula = {{ resource_eula | safe }};
+
+  $(document).ready(function () {
+    if (resource_eula['eula']) {
+      $('#eula').text(resource_eula['eula'])
+      $('#eula-div').show();
+      $('#eula').show();
+    }
+
+    $("#selectAll").click(function () {
+      $("input[name^='userform-']").prop('checked', $(this).prop('checked'));
+    });
+
+    $("input[name^='userform-']").click(function (ele) {
+      var id = $(this).attr('id');
+      if (id != "selectAll") {
+        $("#selectAll").prop('checked', false);
+      }
+    });
+  });
+</script>
+{% endblock %}

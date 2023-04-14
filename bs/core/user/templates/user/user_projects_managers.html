@@ -1,0 +1,100 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+
+{% block title %}
+用户项目{% if not user == viewed_user %}: {{ viewed_user.username }}{% endif %}
+{% endblock %}
+
+
+{% block content %}
+<h2>用户项目{% if not user == viewed_user %}: {{ viewed_user.username }}{% endif %}</h2>
+
+{% with object_list as user_project_associations %}
+  {% if not user_project_associations %}
+    <p class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 你不属于任何项目</p>
+  {% else %}
+    {% for association in user_project_associations %}
+      {% with association.project as project %}
+        <div class="card mb-3">
+          <div class="card-header">
+            <h3 class="d-inline">{{ project.title }}</h3>
+            {% if user == viewed_user or perms.project.can_view_all_projects %}
+              <a href="{% url 'project-detail' project.pk %}" role="button"><i class="far fa-folder-open" aria-hidden="true"></i><span class="sr-only">详细信息</span></a>
+            {% endif %}
+          </div>
+          <div class="card-body">
+            {% if not association.is_project_manager and not association.role.name == 'User' %}
+              <p class="card-text text-justify">用户角色: {{ association.role }}</p>
+            {% endif %}
+            <p class="card-text text-justify">用户状态:
+              {% if association.status.name == 'Active' %}
+                <span class="text-success">{{ association.status.name }}</span>
+              {% else %}
+                {{ association.status.name }}
+              {% endif %}
+            </p>
+            <p class="card-text text-justify"><strong>描述: </strong>{{ project.description }}</p>
+            <p class="card-text text-justify"><strong>学科领域: </strong>{{ project.field_of_science }}</p>
+            <p class="card-text text-justify"><strong>项目状态: </strong>{{ project.status }} </p>
+            <p class="card-text"><strong>项目负责人: </strong>{{ project.pi.first_name }} ({{ project.pi.username }})
+              <a href="mailto:{{ project.pi.email }} "><i class="far fa-envelope" aria-hidden="true"></i><span class="sr-only">发送邮件</span></a>
+              {% if association.is_project_pi %}
+                <span class="text-success">({{ user_pronounish | lower }} <em>{{user_verbform_be}}</em> 项目负责人)</span>
+              {% endif %}
+            </p>
+
+            <div class="card mb-3">
+              <div class="card-header">
+                <h4 class="d-inline"><i class="fas fa-users" aria-hidden="true"></i> 其他经理</a></h4> <span class="badge badge-secondary">{{ project.project_managers | length }}</span>
+                {% if association.is_project_manager and not association.is_project_pi %}
+                  <div class="float-right">
+                    <p class="card-text text-success"><strong>{{ user_pronounish }} {{user_verbform_be}} 项目经理</strong></p>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="card-body">
+                {% if project.project_managers %}
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th scope="col">用户名</th>
+                          <th scope="col">姓名</th>
+                          <th scope="col">邮箱</th>
+                          <th scope="col">状态</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for user in project.project_managers %}
+                          <tr>
+                            <td>{{ user.user.username }}</td>
+                            <td>{{ user.user.first_name }}</td>
+                            <td>
+                              {{ user.user.email }}
+                              <a href="mailto:{{ user.user.email }} "><i class="far fa-envelope"></i></a>
+                            </td>
+                            {% if user.status.name == 'Active' %}
+                              <td class="text-success">{{ user.status.name }}</td>
+                            {% else %}
+                              <td class="text-info">{{ user.status.name }}</td>
+                            {% endif %}
+                          </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                {% else %}
+                  <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有其他项目经理</div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<a class="btn btn-primary" href="{% url 'user-profile' viewed_user %}" role="button"><i class="fas fa-arrow-left" aria-hidden="true"></i> 返回</a>
+{% endblock %}

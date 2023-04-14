@@ -1,0 +1,52 @@
+{% extends "common/base.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load common_tags %}
+
+
+{% block title %}
+项目审核
+{% endblock %}
+
+
+{% block content %}
+<h2>项目审核: {{project.title}}</h2>
+<hr>
+
+<div class="card-body">
+
+  <p class="text-justify">请更新以下信息:</p>
+
+  <ol>
+    <li><a href="{% url 'project-detail' project.pk %}"><i class="fas fa-external-link-alt" aria-hidden="true"></i> 验证</a> 您的项目描述准确无误</li>
+    <li><a href="{% url 'project-detail' project.pk %}#publications"><i class="fas fa-external-link-alt" aria-hidden="true"></i> 添加</a> 出版物</li>
+    <li><a href="{% url 'project-detail' project.pk %}#grants"><i class="fas fa-external-link-alt" aria-hidden="true"></i> 添加</a> 资助</li>
+    <li><a href="{% url 'project-detail' project.pk %}#users"><i class="fas fa-external-link-alt" aria-hidden="true"></i> 验证</a> 用户账户</li>
+  </ol>
+
+  <div class="table-responsive">
+    <table class="table table-bordered table-sm">
+      <tr>
+        <th scope="row" class="text-nowrap">资助更新时间:</th>
+        <td>{{project.latest_grant.modified|date:"M. d, Y"|default:"没有资助"}}</td>
+      </tr>
+      <tr>
+        <th scope="row" class="text-nowrap">出版物更新时间:</th>
+        <td>{{project.latest_publication.created|date:"M. d, Y"|default:"没有出版物"}}</td>
+      </tr>
+      <tr>
+        <th scope="row" class="text-nowrap">项目中的用户:</th>
+        <td>{{project_users}}</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+
+<form method="post">
+  {% csrf_token %}
+  {{project_review_form|crispy}}
+  <input class="btn btn-primary" type="submit" value="提交" />
+  <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button">返回</a>
+</form>
+{% endblock %}
