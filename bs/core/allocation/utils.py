@@ -13,7 +13,7 @@ def set_allocation_user_status_to_error(allocation_user_pk):
 
 def generate_guauge_data_from_usage(name, value, usage):
 
-    label = "%s: %.2f of %.2f" % (name, usage, value)
+    label = "%s: %.2f 共 %.2f" % (name, usage, value)
 
     try:
         percent = (usage/value)*100

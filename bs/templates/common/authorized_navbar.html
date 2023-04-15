@@ -15,19 +15,19 @@
                     <a class="nav-link" href="/">主页</a>
                 </li>
                 <li id="navbar-center-summary" class="nav-item">
-                    <a class="nav-link" href="">HPC中心概览</a>
+                    <a class="nav-link" href="{% url 'center-summary' %}">HPC中心概览</a>
                 </li>
                 <li id="navbar-project-menu" class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">项目</a>
                     <div class="dropdown-menu">
-                        <a id="navbar-project" class="dropdown-item" herf="#">项目列表</a>
-                        <a id="navbar-allocation" class="dropdown-item" herf="#">资源分配</a>
-                        <a id="navbar-resource" class="dropdown-item" herf="#">资源列表</a>
+                        <a id="navbar-project" class="dropdown-item" href="{% url 'project-list' %}">项目列表</a>
+                        <a id="navbar-allocation" class="dropdown-item" href="{% url 'allocation-list' %}">资源分配</a>
+                        <a id="navbar-resource" class="dropdown-item" href="{% url 'resource-list' %}">资源列表</a>
                         {% if settings.ALLOCATION_ACCOUNT_ENABLED %}
-                            <a class="dropdown-item" href="#">配额账号</a>
+                            <a class="dropdown-item" href="{% url 'allocation-account-list' %}">分配账号</a>
                         {% endif %}
                         {% if request.user.userprofile.is_pi %}
-                            <a id="navbar-user-allocation" class="dropdown-item" href="#">用户分配</a>
+                            <a id="navbar-user-allocation" class="dropdown-item" href="{% url 'user-list-allocations' %}">用户分配</a>
                         {% endif %}     
                     </div>
                 </li>

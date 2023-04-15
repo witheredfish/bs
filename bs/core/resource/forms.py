@@ -28,7 +28,7 @@ class ResourceSearchForm(forms.Form):
         widget=forms.DateInput(attrs={'class': 'datepicker'}),
         required=False)
     show_allocatable_resources = forms.BooleanField(
-        initial=False, required=False)
+        initial=False, required=False, label="显示所有可分配资源")
 
 
 class ResourceAttributeDeleteForm(forms.Form):

@@ -1,15 +1,100 @@
-{% extends 'common/base.html' %}
+{% extends "common/base.html" %}
 {% load common_tags %}
+
 
 {% block content %}
 <div class="row">
 
-    <div class="col-lg-6 mt-2">
-        <h2><a href="">项目 &raquo;</a></h2>
-        <hr>
-        
-        
+  <div class="col-lg-6 mt-2">
+    <h2><a href="{% url 'project-list' %}">项目 &raquo;</a></h2>
+    <hr>
 
-    </div>
+    {% if project_list %}
+      <ul class="list-group">
+        {% for project in project_list %}
+          <li class="list-group-item">
+            <a href="{% url 'project-detail' project.pk %}"><i class="fa fa-folder fa-lg" aria-hidden="true"></i>{{project.title}}</a>
+            {% if project.needs_review %}
+              <a href="{% url 'project-review' project.pk %}"><span class="badge badge-warning">需要审核</span></a>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-info" role="alert"><i class="fa fa-info-circle" aria-hidden="true"></i> 没有项目可显示</div>
+      {% if user.userprofile.is_pi or user.is_superuser %}
+        <a class="btn btn-primary btn-block" href="{% url 'project-create' %}" role="button">添加一个项目</a>
+        <hr>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="col-lg-6 mt-2">
+    <h2><a href="{% url 'allocation-list' %}">分配 &raquo;</a></h2>
+    <hr>
+
+    {% if allocation_list %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">项目</th>
+            <th scope="col">资源</th>
+            <th scope="col">状态</th>
+
+          </tr>
+        </thead>
+        <tbody>
+          {% for allocation in allocation_list %}
+          <tr>
+            <td>{{allocation.project.title}}</td>
+            <td>{{allocation.get_parent_resource}}
+              {% if allocation.get_parent_resource.get_ondemand_status == 'Yes' and ondemand_url %}
+              <a href = "{{ondemand_url}}"> {% load static %}  <img src="/static/core/portal/imgs/ondemand.png" alt="ondemand cta" width="25" height="25"></a>
+            {% endif %} 
+            </td>
+            {%  if allocation.status.name == "Expired" and allocation.expires_in < 0 %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}" class="btn btn-danger btn-block">过期</a></td>
+            {%  elif allocation.status.name == "Renewal Requested" %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}" class="btn btn-danger btn-block">更新请求</a></td>
+            {%  elif allocation.expires_in >= 0 and  allocation.expires_in <= 30 %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}" class="btn btn-danger btn-block">在 <span
+                  class="badge badge-light">{{allocation.expires_in}}</span> 天后过期{{allocation.expires_in|pluralize }}</a>
+            </td>
+            {% elif allocation.expires_in > 30 and allocation.expires_in <= 90 %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}" class="btn btn-warning btn-block">在 <span
+                  class="badge badge-light">{{allocation.expires_in}}</span>天后过期{{allocation.expires_in|pluralize }}</a>
+            </td>
+            {% elif allocation.status.name == "Pending" %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}"
+                class="btn btn-info btn-block">{{allocation.status}}</a></td>
+            {% elif allocation.status.name == "Active" %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}"
+                class="btn btn-success btn-block">{{allocation.status}}</a></td>
+            {% else %}
+            <td><a href="{% url 'allocation-detail' allocation.id %}"
+                class="btn btn-info btn-block">{{allocation.status}}</a></td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="alert alert-info" role="alert">
+        <i class="fa fa-info-circle" aria-hidden="true"></i> 没有分配可显示
+      </div>
+    {% endif %}
+  </div>
 </div>
-{% endblock  %}
+<div class="row">
+  {% include "portal/extra_app_templates.html" %}
+</div>
+{% endblock %}
+
+
+{% block javascript %}
+{{ block.super }}
+<script>
+  $("#navbar-main > ul > li.active").removeClass("active");
+  $("#navbar-home").addClass("active");
+</script>
+{% endblock %}

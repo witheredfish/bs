@@ -4,11 +4,12 @@ from bs.core.publication.models import PublicationSource
 
 
 class PublicationAddForm(forms.Form):
-    title = forms.CharField(max_length=1024, required=True)
-    author = forms.CharField(max_length=1024, required=True)
-    year = forms.IntegerField(min_value=1500, max_value=2090, required=True)
-    journal = forms.CharField(max_length=1024, required=True)
-    source = forms.CharField(widget=forms.HiddenInput())
+    title = forms.CharField(max_length=1024, required=True, label="标题")
+    author = forms.CharField(max_length=1024, required=True, label="作者")
+    year = forms.IntegerField(
+        min_value=1500, max_value=2090, required=True, label="年份")
+    journal = forms.CharField(max_length=1024, required=True, label="期刊")
+    source = forms.CharField(widget=forms.HiddenInput(), label="来源")
 
 
 class PublicationSearchForm(forms.Form):

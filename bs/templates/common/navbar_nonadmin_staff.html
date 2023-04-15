@@ -1,22 +1,22 @@
 <li id="navbar-admin" class="nav-item dropdown">
     <a class="nav-link dropdown-toggle" href="#" data-toggle="dropdown">员工中心</a>
     <div class="dropdown-menu">
-            <a id="navbar-user-search" class="dropdown-item" href="user-search-home">用户搜索</a>
+            <a id="navbar-user-search" class="dropdown-item" href="{% url 'user-search-home' %}">用户搜索</a>
             {% if perms.project.can_view_all_projects %}
-                <a class="dropdown-item" href="">所有项目</a>
+                <a class="dropdown-item" href="{% url 'project-list' %}?show_all_projects=on">所有项目</a>
             {% endif %}
             {% if perms.project.can_view_all_allocations %}
-                <a class="dropdown-item" href="">所有分配</a>
+                <a class="dropdown-item" href="{% url 'allocation-list' %}?show_all_allocations=on">所有分配</a>
             {% endif %}
-                <a class="dropdown-item" href="">所有资源</a>
+                <a class="dropdown-item" href="{% url 'resource-list' %}">所有资源</a>
             {% if perms.project.can_review_pending_project_reviews %}
-                <a id="navbar-project-reviews" class="dropdown-item" href="">项目审查</a>
+                <a id="navbar-project-reviews" class="dropdown-item" href="{% url 'project-review-list' %}">项目审核</a>
             {% endif %}
             {% if perms.allocation.can_review_allocation_requests %}
-                <a id="navbar-allocation-request" class="dropdown-item" href="">分配请求</a>
+                <a id="navbar-allocation-request" class="dropdown-item" href="{% url 'allocation-request-list' %}">分配请求</a>
             {% endif %}
             {% if perms.grant.can_view_all_grants %}
-                <a id="navbar-grant-report" class="dropdown-item" href="">资助报表</a>
+                <a id="navbar-grant-report" class="dropdown-item" href="{% url 'grant-report' %}">资助报表</a>
             {% endif %}
     </div>
 </li>

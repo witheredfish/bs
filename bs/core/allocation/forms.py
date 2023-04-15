@@ -54,7 +54,7 @@ class AllocationForm(forms.Form):
 
 class AllocationUpdateForm(forms.Form):
     status = forms.ModelChoiceField(
-        queryset=AllocationStatusChoice.objects.all().order_by(Lower("name")), empty_label=None)
+        queryset=AllocationStatusChoice.objects.all().order_by(Lower("name")), empty_label=None, label="状态")
     start_date = forms.DateField(
         label='开始日期',
         widget=forms.DateInput(attrs={'class': 'datepicker'}),
@@ -143,8 +143,9 @@ class AllocationSearchForm(forms.Form):
     status = forms.ModelMultipleChoiceField(
         widget=forms.CheckboxSelectMultiple,
         queryset=AllocationStatusChoice.objects.all().order_by(Lower("name")),
-        required=False)
-    show_all_allocations = forms.BooleanField(initial=False, required=False)
+        required=False, label="状态")
+    show_all_allocations = forms.BooleanField(
+        initial=False, required=False, label="显示所有分配")
 
 
 class AllocationReviewUserForm(forms.Form):

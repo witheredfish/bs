@@ -39,9 +39,6 @@
             <p class="card-text text-justify"><strong>项目状态: </strong>{{ project.status }} </p>
             <p class="card-text"><strong>项目负责人: </strong>{{ project.pi.first_name }} ({{ project.pi.username }})
               <a href="mailto:{{ project.pi.email }} "><i class="far fa-envelope" aria-hidden="true"></i><span class="sr-only">发送邮件</span></a>
-              {% if association.is_project_pi %}
-                <span class="text-success">({{ user_pronounish | lower }} <em>{{user_verbform_be}}</em> 项目负责人)</span>
-              {% endif %}
             </p>
 
             <div class="card mb-3">

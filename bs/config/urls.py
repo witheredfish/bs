@@ -10,8 +10,21 @@ admin.site.site_title = 'HPC中心管理（毕设）'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/', include('bs.core.user.urls')),
+    path('robots.txt', TemplateView.as_view(
+        template_name='robots.txt', content_type='text/plain'), name="robots"),
     path('', portal_views.home, name='home'),
+    path('center-summary', portal_views.center_summary, name='center-summary'),
+    path('allocation-summary', portal_views.allocation_summary,
+         name='allocation-summary'),
+    path('allocation-by-fos', portal_views.allocation_by_fos,
+         name='allocation-by-fos'),
+    path('user/', include('bs.core.user.urls')),
+    path('project/', include('bs.core.project.urls')),
+    path('allocation/', include('bs.core.allocation.urls')),
+    path('resource/', include('bs.core.resource.urls')),
+    path('grant/', include('bs.core.grant.urls')),
+    path('publication/', include('bs.core.publication.urls')),
+    path('research-output/', include('bs.core.research_output.urls')),
 ]
 
 if 'django_su.backends.SuBackend' in settings.AUTHENTICATION_BACKENDS:

@@ -9,7 +9,7 @@ class FieldOfScienceAdmin(admin.ModelAdmin):
         'is_selectable',
         'parent_id',
         'fos_nsf_id',
-        'fos_nsf_name',
+        'fos_nsf_abbrev',
         'directorate_fos_id',
     )
     list_filter = ('is_selectable', )

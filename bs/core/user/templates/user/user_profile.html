@@ -14,7 +14,7 @@
         <i class="fas fa-user" aria-hidden="true"></i>
         &nbsp{{ viewed_user.username }}
         <div class="float-right">
-            <a class="btn btn-info" href="" role="button"><i class="far fa-user-circle" aria-hidden="true"></i>&nbsp查看参与项目及其管理员</a>
+            <a class="btn btn-info" href="{% url 'user-projects-managers' viewed_user %}" role="button"><i class="far fa-user-circle" aria-hidden="true"></i>&nbsp查看参与项目及其管理员</a>
         </div>
     </div>
     <div class="card-body">

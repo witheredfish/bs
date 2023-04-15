@@ -3,12 +3,12 @@
     <div class="dropdown-menu">
             <a class="dropdown-item" href="/admin">后台中心</a>
             <a id="navbar-user-search" class="dropdown-item" href="{% url 'user-search-home' %}">用户搜索</a>
-            <a class="dropdown-item" href="#">所有项目</a>
-            <a class="dropdown-item" href="#">所有分配</a>
-            <a class="dropdown-item" href="#">所有资源</a>
-            <a id="navbar-project-reviews" class="dropdown-item" href="">项目审查</a>
-            <a id="navbar-allocation-request" class="dropdown-item" href="">分配请求</a>
-            <a id="navbar-allocation-change-request" class="dropdown-item" href="">更改分配请求</a>
-            <a id="navbar-grant-report" class="dropdown-item" href="">资助报告</a>
+            <a class="dropdown-item" href="{% url 'project-list' %}?show_all_projects=on">所有项目</a>
+            <a class="dropdown-item" href="{% url 'allocation-list' %}?show_all_allocations=on">所有分配</a>
+            <a class="dropdown-item" href="{% url 'resource-list' %}">所有资源</a>
+            <a id="navbar-project-reviews" class="dropdown-item" href="{% url 'project-review-list' %}">项目审核</a>
+            <a id="navbar-allocation-request" class="dropdown-item" href="{% url 'allocation-request-list' %}">分配请求</a>
+            <a id="navbar-allocation-change-request" class="dropdown-item" href="{% url 'allocation-change-list' %}">分配更改请求</a>
+            <a id="navbar-grant-report" class="dropdown-item" href="{% url 'grant-report' %}">资助报告</a>
     </div>
 </li>

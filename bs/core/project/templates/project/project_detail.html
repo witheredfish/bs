@@ -17,7 +17,7 @@
 <div id="alert_div">
 </div>
 
-{% if project.status.name=='Archived' %}
+{% if project.status.name == 'Archived' %}
     <div class="alert alert-warning" role="alert">
         这是一个存档项目！ 您无法进行任何更改。
     </div>
@@ -42,9 +42,9 @@
         <div class="card-body">
             {% if project.status.name != 'Archived' %}
                 <a class="btn btn-success" href="{% url 'project-add-users-search' project.pk %}" role="button"><i class="fas fa-user-plus" aria-hidden="true"></i> 添加人员</a>
-                <a class="btn btn-success" href="{% url 'grant-create' project.id %}" role="button"><i class="fas fa-trophy" aria-hidden="true"></i> 添加经费</a>
+                <a class="btn btn-success" href="{% url 'grant-create' project.id %}" role="button"><i class="fas fa-trophy" aria-hidden="true"></i> 添加资助</a>
                 <a class="btn btn-success" href="{% url 'publication-search' project.pk %}" role="button"><i class="fas fa-newspaper" aria-hidden="true"></i> 添加出版物</a>
-                <a class="btn btn-success" href="{% url 'add-research-output' project.pk %}" role="button"><i class="far fa-newspaper" aria-hidden="true"></i> 添加研究产出t</a>
+                <a class="btn btn-success" href="{% url 'add-research-output' project.pk %}" role="button"><i class="far fa-newspaper" aria-hidden="true"></i> 添加研究产出</a>
             {% endif %}
         </div>
     </div>
@@ -88,9 +88,9 @@
                         <th scope="col" class="text-nowrap">用户名</th>
                         <th scope="col" class="text-nowrap">姓名</th>
                         <th scope="col" class="text-nowrap">邮箱</th>
-                        <th scope="col" class="text-nowrap">角色 <a href="#" data-toggle="popover" title="Role" data-trigger="hover" data-content="项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。</span></a></th>
+                        <th scope="col" class="text-nowrap">角色 <a href="#" data-toggle="popover" title="角色" data-trigger="hover" data-content="项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">项目经理授予用户向项目添加和删除用户、分配、授权和发布的访问权限。</span></a></th>
                         <th scope="col" class="text-nowrap">状态</th>
-                        <th scope="col" class="nosort"><input type="checkbox" class="check" id="selectAll" style="margin-right: 5px;">启用通知 <a href="#" title="Enable Notifications" data-toggle="popover" data-trigger="hover" data-content="禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。</span></a></th>
+                        <th scope="col" class="nosort"><input type="checkbox" class="check" id="selectAll" style="margin-right: 5px;">启用通知 <a href="#" title="启用通知" data-toggle="popover" data-trigger="hover" data-content="禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。"><i class="fas fa-info-circle" aria-hidden="true"></i><span class="sr-only">禁用后，用户将不会收到有关分配请求和到期或云使用情况的通知。</span></a></th>
                         <th scope="col" class="nosort">操作</th>
                     </tr>
                 </thead>
@@ -145,6 +145,518 @@
 
 <div class="card mb-3">
     <div class="card-header">
-        <h3 class="d-inline"><i class="fas fa-server" aria-hidden="true"></i> 分配</h3> <span class="badge badge-secondary">10</span>
+      <h3 class="d-inline"><i class="fas fa-server" aria-hidden="true"></i> 分配</h3> <span class="badge badge-secondary">{{allocations.count}}</span>
+      <div class="float-right">
+        {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+          <a class="btn btn-success" href="{% url 'allocation-create' project.pk %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i> 资源分配请求</a>
+        {% endif %}
+      </div>
     </div>
-</div>
+    <div class="card-body">
+      {% if allocations %}
+        <div class="table-responsive">
+          <table id="allocation_table" class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">资源名称</th>
+                <th scope="col">资源类型</th>
+                <th scope="col">信息</th>
+                <th scope="col">状态</th>
+                <th scope="col">结束日期</th>
+                <th scope="col" class="nosort">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for allocation in allocations %}
+              <tr>
+                <td>{{ allocation.get_parent_resource.name }}</td>
+                <td>{{ allocation.get_parent_resource.resource_type.name }}</td>
+                {% if allocation.get_information != '' %}
+                <td class="text-nowrap">{{allocation.get_information}}</td>
+                {% else %}
+                <td class="text-nowrap">{{allocation.description|default_if_none:""}}</td>
+                {% endif %}
+                {% if allocation.status.name == 'Active' %}
+                  <td class="text-success">{{ allocation.status.name }}</td>
+                {% elif  allocation.status.name == 'Expired' or allocation.status.name == 'Denied' %}
+                  <td class="text-danger">{{ allocation.status.name }}</td>
+                {% else %}
+                  <td class="text-info">{{ allocation.status.name }}</td>
+                {% endif %}
+                <td>{{allocation.end_date|date:"Y-m-d"}}</td>
+                <td>
+                  <a href="{% url 'allocation-detail' allocation.pk %}"><i class="far fa-folder-open" aria-hidden="true"></i><span class="sr-only">详细信息</span></a>
+                  {% if allocation.is_locked and allocation.status.name == 'Active' and allocation.expires_in <= 60 and allocation.expires_in >= 0 %}
+                  <span class="badge badge-warning"><i class="far fa-clock" aria-hidden="true"></i>
+                    在 {{allocation.expires_in}} 天后过期{{allocation.expires_in|pluralize}} <br> 不能延期
+                  </span>
+                  {% elif is_allowed_to_update_project and ALLOCATION_ENABLE_ALLOCATION_RENEWAL and allocation.status.name == 'Active' and allocation.expires_in <= 60 and allocation.expires_in >= 0 %}
+                    <a href="{% url 'allocation-renew' allocation.pk %}">
+                    <span class="badge badge-warning"><i class="fas fa-redo-alt" aria-hidden="true"></i>
+                    在 {{allocation.expires_in}} 天后过期{{allocation.expires_in|pluralize}} <br> 点击以延期
+                    </span>
+                    </a>
+                  {% endif %}
+                  {% if allocation.get_parent_resource.get_ondemand_status == 'Yes' and ondemand_url %}
+                  <a href = "{{ ondemand_url }}" target="_blank"> <img src="/static/core/portal/imgs/ondemand.png" alt="ondemand cta" width="25" height="25"></a>
+                {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有分配可以显示</div>
+      {% endif %}
+    </div>
+  </div>
+
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline"><i class="fas fa-info-circle" aria-hidden="true"></i> 属性</h3> <span class="badge badge-secondary">{{attributes.count}}</span>
+      <div class="float-right">
+        {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+          <a class="btn btn-success" href="{% url 'project-attribute-create' project.pk %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i> 添加属性</a>
+          {% if attributes %}
+            <a class="btn btn-danger" href="{% url 'project-attribute-delete' project.pk %}" role="button"><i class="fas fa-minus" aria-hidden="true"></i> 删除属性</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if attributes %}
+        <div class="table-responsive">
+          <table id="attribute_table" class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">属性类型</th>
+                <th scope="col">属性值</th>
+                {% if is_allowed_to_update_project %}
+                <th scope="col" class="nosort">操作</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for attribute in attributes %}
+                  {% if attribute.proj_attr_type.is_private and is_allowed_to_update_project %}
+                    <tr style="background-color:#eee">
+                      <td><i class="fas fa-lock" aria-hidden="true"></i> {{attribute}}</td>
+                      <td>{{attribute.value}}</td>
+                      <td><a href="{% url 'project-attribute-update' project.pk attribute.pk %}"><i class="far fa-edit" aria-hidden="true"></i><span class="sr-only">编辑</span></a></td>
+                    </tr>
+                  {% else %}
+                    <tr>
+                      <td>{{attribute}}</td>
+                      <td>
+                        {{attribute.value}}
+                      </td>
+                      {% if is_allowed_to_update_project %}
+                      <td><a href="{% url 'project-attribute-update' project.pk attribute.pk %}"><i class="far fa-edit" aria-hidden="true"></i><span class="sr-only">编辑</span></a></td>
+                      {% endif %}
+                    </tr>                
+                  {% endif %}
+                {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if attributes_with_usage %}
+        <hr>
+        {% for attribute in attributes_with_usage %}
+          <div class="card mb-3 mr-1">
+            <div class="card-body">
+              <h4 class="card-title">{{attribute}}</h4>
+              <div id="gauge-{{forloop.counter0}}"></div>
+            </div>
+          </div>
+        {% endfor %}
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有属性可以显示</div>
+      {% endif %}
+    </div>
+  </div>
+  
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline" id="grants"><i class="fas fa-trophy" aria-hidden="true"></i> 资助</h3> <span class="badge badge-secondary">{{grants.count}}</span>
+      <div class="float-right">
+        {% if project.latest_grant.modified %}
+          <span class="badge badge-info">Last Updated: {{project.latest_grant.modified|date:"M. d, Y"}}</span>
+        {% endif %}
+        {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+          <a class="btn btn-success" href="{% url 'grant-create' project.id %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i>添加资助</a>
+          {% if grants %}
+            <a class="btn btn-danger" href="{% url 'grant-delete-grants' project.pk %}" role="button"><i class="fas fa-minus" aria-hidden="true"></i> 删除资助</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if grants %}
+        <div class="table-responsive">
+          <table id="grant_table" class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">标题</th>
+                <th scope="col" class="text-nowrap">资助负责人</th>
+                <th scope="col" class="text-nowrap">项目负责人角色</th>
+                <th scope="col" class="text-nowrap">资助总数</th>
+                <th scope="col" class="text-nowrap">资助开始日期</th>
+                <th scope="col" class="text-nowrap">资助结束日期</th>
+                <th scope="col" class="text-nowrap">状态</th>
+                <th scope="col" class="nosort">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for grant in grants %}
+              <tr>
+                <td>{{ grant.title }}</td>
+                <td class="text-nowrap">{{ grant.grant_pi }}</td>
+                <td>{{ grant.role}}</td>
+                <td>{{ grant.total_amount_awarded|intcomma}}</td>
+                <td>{{ grant.grant_start|date:"Y-m-d" }}</td>
+                <td>{{ grant.grant_end|date:"Y-m-d" }}</td>
+                {% if grant.status.name == 'Active' %}
+                  <td class="text-success">{{ grant.status.name }}</td>
+                {% elif  grant.status.name == 'Archived' %}
+                  <td class="text-danger">{{ grant.status.name }}</td>
+                {% else %}
+                  <td class="text-info">{{ grant.status.name }}</td>
+                {% endif %}
+                <td><a href="{% url 'grant-update' grant.id %}"><i class="far fa-edit" aria-hidden="true"></i><span class="sr-only">编辑</span></a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有资助可以显示</div>
+      {% endif %}
+    </div>
+  </div>
+
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline" id="publications"><i class="fas fa-newspaper" aria-hidden="true"></i> 出版物</h3> <span class="badge badge-secondary">{{publications.count}}</span>
+      <div class="float-right">
+        {% if project.latest_publication.created %}
+          <span class="badge badge-info">更新时间: {{project.latest_publication.created|date:"M. d, Y"}}</span>
+        {% endif %}
+        {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+          <a class="btn btn-success" href="{% url 'publication-search' project.pk %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i>添加出版物</a>
+          {% if publications %}
+          <a class="btn btn-success" href="{% url 'publication-export-publications' project.pk %}" role="button"><i class="fas fa-file-export" aria-hidden="true"></i> 导出出版物</a>
+            <a class="btn btn-danger" href="{% url 'publication-delete-publications' project.pk %}" role="button"><i class="fas fa-minus" aria-hidden="true"></i> 删除出版物</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if publications %}
+        <div class="table-responsive">
+          <table id="publication-table" class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">标题，作者和期刊</th>
+                <th scope="col">年份</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for publication in publications %}
+              <tr>
+                <td>
+                  <strong>标题: </strong>{{ publication.title }}
+                  {% if publication.source.url %}
+                    <a target="_blank" rel="noopener" href="{{publication.source.url}}{{publication.unique_id}}"><i class="fas fa-external-link-alt" aria-hidden="true"></i><span class="sr-only">访问资源</span></a>
+                  {% endif %}
+                  <br><strong>作者: </strong>{{ publication.author}}
+                  <br><strong>期刊: </strong>{{ publication.journal}}
+                </td>
+                <td class="text-nowrap">{{ publication.year }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有出版物可显示</div>
+      {% endif %}
+    </div>
+  </div>
+
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline" id="research_outputs"><i class="far fa-newspaper" aria-hidden="true"></i> 研究成果</h3> <span class="badge badge-secondary">{{ research_outputs.count}}</span>
+      <div class="float-right">
+        {% if project.status.name != 'Archived' and is_allowed_to_update_project %}
+          <a class="btn btn-success" href="{% url 'add-research-output' project.pk %}" role="button"><i class="fas fa-plus" aria-hidden="true"></i> 添加研究成果</a>
+          {% if research_outputs %}
+            <a class="btn btn-danger" href="{% url 'research-output-delete-research-outputs' project.pk %}" role="button"><i class="fas fa-minus" aria-hidden="true"></i> 删除研究成果</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if research_outputs %}
+        <div class="table-responsive">
+          <table id="research-output-table" class="table table-hover">
+            <tbody>
+              {% for research_output in research_outputs %}
+              <tr>
+                <td title="Entered by {{ research_output.created_by }} on {{ research_output.created|date:"M. d, Y"}}">
+                  {% if research_output.title %}
+                    <strong>{{ research_output.title }}</strong>
+                  {% endif %}
+                  <div style="max-height: 120px; overflow: auto;">
+                    {{ research_output.description | linebreaks }}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle"></i> 没有研究成果可显示</div>
+      {% endif %}
+    </div>
+  </div>
+
+
+  <div class="card mb-3">
+    <div class="card-header">
+      <h3 class="d-inline"><i class="fas fa-users" aria-hidden="true"></i> 通知 </h3> <span class="badge badge-secondary">{{project.projectusermessage_set.count}}</span>
+      <div class="float-right">
+        {% if request.user.is_superuser %}
+          <a class="btn btn-success" href="{% url 'project-note-add' project.pk %}" role="button">
+            <i class="fas fa-plus" aria-hidden="true"></i> 添加通知
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="card-body">
+      {% if project.projectusermessage_set.all %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th scope="col">内容</th>
+                <th scope="col">系统管理员</th>
+                <th scope="col">修改时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for message in project.projectusermessage_set.all %}
+                {% if not message.is_private or request.user.is_superuser %}
+              <tr>
+                <td>{{ message.message }}</td>
+                <td>{{ message.author.first_name }} {{ message.author.last_name }}</td>
+                <td>{{ message.modified }}</td>
+              </tr>
+                {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info" role="alert"><i class="fas fa-info-circle" aria-hidden="true"></i> 没有系统管理员的通知</div>
+      {% endif %}
+    </div>
+  </div>
+  
+  <script>
+    function getCookie(name) {
+      var cookieValue = null;
+      if (document.cookie && document.cookie != '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+          var cookie = jQuery.trim(cookies[i]);
+          if (cookie.substring(0, name.length + 1) == (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  
+    $(document).ready(function(){
+      $('[data-toggle="popover"]').popover();
+  
+      var guage_data = {{ guage_data | safe }};
+      drawGauges(guage_data);
+  
+      $('#publication-table').DataTable({
+        "aLengthMenu": [
+          [10, 25, 50, 100, -1],
+          [10, 25, 50, 100, "All"]],
+        "iDisplayLength": 25,
+        "bSortClasses": false,
+        "order": [[ 1, "desc" ]],
+        "language": {
+            "sProcessing": "处理中...",
+            "sLengthMenu": "显示 _MENU_ 项结果",
+            "sZeroRecords": "没有匹配结果",
+            "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+            "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+            "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+            "sInfoPostFix": "",
+            "sSearch": "搜索：",
+            "sUrl": "",
+            "sEmptyTable": "表中数据为空",
+            "sLoadingRecords": "载入中...",
+            "sInfoThousands": ",",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "上页",
+                "sNext": "下页",
+                "sLast": "末页"
+            },
+            "oAria": {
+                "sSortAscending": ": 以升序排列此列",
+                "sSortDescending": ": 以降序排列此列"
+            }
+        }
+      });
+  
+      $('#allocation_table').DataTable({
+        'aoColumnDefs': [{
+          'bSortable': false,
+          'aTargets': ['nosort']
+        }],
+        "language": {
+            "sProcessing": "处理中...",
+            "sLengthMenu": "显示 _MENU_ 项结果",
+            "sZeroRecords": "没有匹配结果",
+            "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+            "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+            "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+            "sInfoPostFix": "",
+            "sSearch": "搜索：",
+            "sUrl": "",
+            "sEmptyTable": "表中数据为空",
+            "sLoadingRecords": "载入中...",
+            "sInfoThousands": ",",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "上页",
+                "sNext": "下页",
+                "sLast": "末页"
+            },
+            "oAria": {
+                "sSortAscending": ": 以升序排列此列",
+                "sSortDescending": ": 以降序排列此列"
+            }
+        }
+      });
+  
+      $('#grant_table').DataTable({
+        'aoColumnDefs': [{
+          'bSortable': false,
+          'aTargets': ['nosort']
+        }],
+        "language": {
+            "sProcessing": "处理中...",
+            "sLengthMenu": "显示 _MENU_ 项结果",
+            "sZeroRecords": "没有匹配结果",
+            "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+            "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+            "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+            "sInfoPostFix": "",
+            "sSearch": "搜索：",
+            "sUrl": "",
+            "sEmptyTable": "表中数据为空",
+            "sLoadingRecords": "载入中...",
+            "sInfoThousands": ",",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "上页",
+                "sNext": "下页",
+                "sLast": "末页"
+            },
+            "oAria": {
+                "sSortAscending": ": 以升序排列此列",
+                "sSortDescending": ": 以降序排列此列"
+            }
+        }
+      });
+  
+      $('#projectuser_table').DataTable({
+        'aoColumnDefs': [{
+          'bSortable': false,
+          'aTargets': ['nosort']
+        }],
+        "language": {
+            "sProcessing": "处理中...",
+            "sLengthMenu": "显示 _MENU_ 项结果",
+            "sZeroRecords": "没有匹配结果",
+            "sInfo": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+            "sInfoEmpty": "显示第 0 至 0 项结果，共 0 项",
+            "sInfoFiltered": "(由 _MAX_ 项结果过滤)",
+            "sInfoPostFix": "",
+            "sSearch": "搜索：",
+            "sUrl": "",
+            "sEmptyTable": "表中数据为空",
+            "sLoadingRecords": "载入中...",
+            "sInfoThousands": ",",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "上页",
+                "sNext": "下页",
+                "sLast": "末页"
+            },
+            "oAria": {
+                "sSortAscending": ": 以升序排列此列",
+                "sSortDescending": ": 以降序排列此列"
+            }
+        }
+      });
+  
+      $("#selectAll").click(function () {
+        $("input[id^='email_notifications_for_user_id_']").not(":disabled").prop('checked', $(this).prop('checked')).change();
+       });
+  
+      $("[id^=email_notifications_for_user_id_]").change(function() {
+        var checked = $(this).prop('checked');
+        var user_project_id = Number($(this).attr('id').split("_").pop());
+  
+        $.ajax({
+          headers: { 'X-CSRFToken': getCookie('csrftoken') },
+          type: "POST",
+          url: "/project/project-user-update-email-notification/",
+          data: {
+            user_project_id: user_project_id,
+            checked: checked
+          },
+          success: function (data) {
+            $("#alert_div").html('<div class="alert alert-success alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>更新邮件通知成功</div>')
+          },
+          error: function (xhr, status, error) {
+            $("#alert_div").html('<div class="alert alert-danger alert-dismissible"><button type="button" class="close" data-dismiss="alert">&times;</button>更新邮件通知失败</div>')
+          }
+        });
+      });
+    });
+  
+    function drawGauges(guage_data) {
+      var arrayLength = guage_data.length;
+      for (var i = 0; i < arrayLength; i++) {
+        c3.generate({
+          bindto: '#gauge-' + i,
+          data: guage_data[i],
+          legend: {
+            item: {
+              onclick: function (id) { }
+            }
+          }
+        });
+      }
+    }
+  </script>
+  {% endblock %}
+  

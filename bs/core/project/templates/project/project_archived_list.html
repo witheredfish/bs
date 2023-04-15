@@ -34,7 +34,7 @@
         <div class="card-body">
           <form id="filter_form" method="GET" action="{% url 'project-archived-list' %}">
             {{ project_search_form|crispy }}
-            <input type="submit" class="btn btn-primary" value="Search">
+            <input type="submit" class="btn btn-primary" value="搜索">
             <button id="form_reset_button" type="button" class="btn btn-secondary">重设</button>
           </form>
         </div>

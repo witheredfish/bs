@@ -25,7 +25,8 @@ class ProjectSearchForm(forms.Form):
     username = forms.CharField(label=USERNAME, max_length=100, required=False)
     field_of_science = forms.CharField(
         label=FIELD_OF_SCIENCE, max_length=100, required=False)
-    show_all_projects = forms.BooleanField(initial=False, required=False)
+    show_all_projects = forms.BooleanField(
+        initial=False, required=False, label="显示所有项目")
 
 
 class ProjectAddUserForm(forms.Form):

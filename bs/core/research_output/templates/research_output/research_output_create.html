@@ -12,7 +12,7 @@
 <form method="post">
   {% csrf_token %}
   {{ form|crispy }}
-  <input class="btn btn-primary" type="submit" value="Save" />
+  <input class="btn btn-primary" type="submit" value="保存" />
   <a class="btn btn-secondary" href="{% url 'project-detail' project.pk %}" role="button">取消</a>
 </form>
 {% endblock %}

@@ -10,7 +10,7 @@ class FieldOfScience(TimeStampedModel):
     description = models.CharField(max_length=255, verbose_name="学科描述")
     fos_nsf_id = models.IntegerField(
         null=True, blank=True, verbose_name="NSF编号")
-    fos_nsf_name = models.CharField(
+    fos_nsf_abbrev = models.CharField(
         max_length=10, null=True, blank=True, verbose_name="NSF缩写")
     directorate_fos_id = models.IntegerField(
         null=True, blank=True, verbose_name="管理机构ID")
